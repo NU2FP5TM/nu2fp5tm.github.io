@@ -26,13 +26,29 @@
     <p id="detectedWords"></p>
 
     <script>
-        // 定义敏感词库
-        const sensitiveWords = ["习近平", "共产党", "中国","原神"]; // 可以自行添加敏感词
+        let sensitiveWords = [];  // 用来存储从外部加载的敏感词列表
+
+        // 读取敏感词库文件（假设敏感词库存储在同一目录下的 'sensitive_words.txt' 文件）
+        fetch('sensitive_words.txt')
+            .then(response => response.text())
+            .then(data => {
+                // 将文本数据按行分割，存入敏感词列表
+                sensitiveWords = data.split('\n').map(word => word.trim()).filter(word => word !== "");
+            })
+            .catch(error => {
+                console.error('加载敏感词库失败:', error);
+            });
 
         function checkSensitiveWords() {
             const text = document.getElementById("inputText").value;
             const resultElement = document.getElementById("result");
             const detectedWordsElement = document.getElementById("detectedWords");
+
+            if (sensitiveWords.length === 0) {
+                resultElement.textContent = "正在加载敏感词库，请稍候...";
+                resultElement.className = "green";
+                return;
+            }
 
             // 检测敏感词
             const detectedWords = sensitiveWords.filter(word => text.includes(word));
