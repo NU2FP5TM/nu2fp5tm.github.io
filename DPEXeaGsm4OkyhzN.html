@@ -1,1 +1,71 @@
+<button id="generateButton">生成随机数字</button>
+<button id="calculateButton">计算24点</button>
+
+<div id="numbersOutput">题目数字：等待生成...</div>
+<div id="solutionOutput">计算结果：等待计算...</div>
+
+<script>
+let numbers = [];
+
+// 生成四个随机数
+document.getElementById("generateButton").addEventListener("click", function() {
+    numbers = generateFourRandomNumbers();
+    document.getElementById("numbersOutput").innerHTML = "题目数字: " + numbers.join(", ");
+    document.getElementById("solutionOutput").innerHTML = "计算结果：等待计算...";
+});
+
+// 计算24点
+document.getElementById("calculateButton").addEventListener("click", function() {
+    if (numbers.length === 0) {
+        document.getElementById("solutionOutput").innerHTML = "请先生成随机数字！";
+        return;
+    }
+
+    const solution = find24PointSolution(numbers);
+    if (solution) {
+        document.getElementById("solutionOutput").innerHTML = "计算步骤: " + solution;
+    } else {
+        document.getElementById("solutionOutput").innerHTML = "无法计算出24点";
+    }
+});
+
+// 生成四个1~13之间的随机数
+function generateFourRandomNumbers() {
+    let randomNumbers = [];
+    for (let i = 0; i < 4; i++) {
+        randomNumbers.push(Math.floor(Math.random() * 13) + 1);
+    }
+    return randomNumbers;
+}
+
+// 递归检查是否可以通过四个数得到24点
+function find24PointSolution(nums) {
+    if (nums.length === 1) {
+        return Math.abs(nums[0] - 24) < 1e-6 ? nums[0].toString() : null;
+    }
+
+    for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+            let remaining = nums.filter((_, index) => index !== i && index !== j);
+            const operations = [
+                { result: nums[i] + nums[j], expr: `(${nums[i]} + ${nums[j]})` },
+                { result: nums[i] - nums[j], expr: `(${nums[i]} - ${nums[j]})` },
+                { result: nums[j] - nums[i], expr: `(${nums[j]} - ${nums[i]})` },
+                { result: nums[i] * nums[j], expr: `(${nums[i]} * ${nums[j]})` }
+            ];
+            if (nums[j] !== 0) operations.push({ result: nums[i] / nums[j], expr: `(${nums[i]} / ${nums[j]})` });
+            if (nums[i] !== 0) operations.push({ result: nums[j] / nums[i], expr: `(${nums[j]} / ${nums[i]})` });
+
+            for (const op of operations) {
+                let newNums = [...remaining, op.result];
+                const solution = find24PointSolution(newNums);
+                if (solution) {
+                    return `${op.expr} => ${solution}`;
+                }
+            }
+        }
+    }
+    return null;
+}
+</script>
 
