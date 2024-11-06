@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单恋爱冒险游戏</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; }
+        #game-container { width: 80%; margin: auto; max-width: 600px; }
+        #dialogue { padding: 20px; background-color: #ffffff; border-radius: 5px; }
+        #choices { margin-top: 15px; }
+        .choice { padding: 10px; margin: 5px 0; background-color: #ececec; border: none; width: 100%; cursor: pointer; }
+        .choice:hover { background-color: #dcdcdc; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="dialogue"></div>
+    <div id="choices"></div>
+</div>
+
+<script>
+    const story = {
+        start: {
+            text: "你遇到了一位神秘的女孩，她对你微笑着。你想怎么回应？",
+            choices: [
+                { text: "微笑回应", next: "smileBack" },
+                { text: "害羞地低头", next: "lookDown" }
+            ]
+        },
+        smileBack: {
+            text: "女孩开心地笑了起来，她问你叫什么名字。",
+            choices: [
+                { text: "告诉她你的名字", next: "tellName" },
+                { text: "保持沉默", next: "silent" }
+            ]
+        },
+        lookDown: {
+            text: "女孩疑惑地看着你，你有点紧张。",
+            choices: [
+                { text: "鼓起勇气抬头看她", next: "smileBack" },
+                { text: "转身离开", next: "leave" }
+            ]
+        },
+        tellName: {
+            text: "她对你的名字表示赞美，看来你们的关系更近了一步。",
+            choices: [
+                { text: "继续聊天", next: "continueChat" },
+                { text: "结束对话", next: "end" }
+            ]
+        },
+        silent: {
+            text: "女孩觉得你不太友好，尴尬地离开了。",
+            choices: []
+        },
+        leave: {
+            text: "你离开了，感觉错过了什么。",
+            choices: []
+        },
+        continueChat: {
+            text: "你们聊了很久，似乎有很多共同点。也许这是个美好的开始。",
+            choices: []
+        },
+        end: {
+            text: "对话结束，你感到满足。",
+            choices: []
+        }
+    };
+
+    function showScene(sceneId) {
+        const scene = story[sceneId];
+        const dialogueContainer = document.getElementById("dialogue");
+        const choicesContainer = document.getElementById("choices");
+
+        dialogueContainer.innerHTML = scene.text;
+        choicesContainer.innerHTML = '';
+
+        scene.choices.forEach(choice => {
+            const button = document.createElement("button");
+            button.className = "choice";
+            button.innerText = choice.text;
+            button.onclick = () => showScene(choice.next);
+            choicesContainer.appendChild(button);
+        });
+    }
+
+    // 开始游戏
+    showScene("start");
+</script>
+
+</body>
+</html>
