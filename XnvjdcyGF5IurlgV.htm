@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敏感词检测</title>
+    <style>
+        #result {
+            font-weight: bold;
+        }
+        .green {
+            color: green;
+        }
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>敏感词检测</h2>
+    <textarea id="inputText" rows="6" cols="50" placeholder="请输入文本..."></textarea>
+    <br>
+    <button onclick="checkSensitiveWords()">检测敏感词</button>
+    <p id="result"></p>
+    <p id="detectedWords"></p>
+
+    <script>
+        // 定义敏感词库
+        const sensitiveWords = ["习近平", "共产党", "中国","原神"]; // 可以自行添加敏感词
+
+        function checkSensitiveWords() {
+            const text = document.getElementById("inputText").value;
+            const resultElement = document.getElementById("result");
+            const detectedWordsElement = document.getElementById("detectedWords");
+
+            // 检测敏感词
+            const detectedWords = sensitiveWords.filter(word => text.includes(word));
+
+            if (detectedWords.length === 0) {
+                // 未检测到敏感词
+                resultElement.textContent = "当前文本没有检测到敏感词！";
+                resultElement.className = "green";
+                detectedWordsElement.textContent = ""; // 清空已检测的敏感词显示
+            } else {
+                // 检测到敏感词
+                resultElement.textContent = "发现敏感词！";
+                resultElement.className = "red";
+                detectedWordsElement.textContent = "已检测到的敏感词: " + detectedWords.join(" ");
+            }
+        }
+    </script>
+
+</body>
+</html>
