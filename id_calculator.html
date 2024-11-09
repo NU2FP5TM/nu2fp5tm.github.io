@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>身份证校验码计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        input[type="text"], button {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>身份证校验码计算器</h2>
+        <input type="text" id="id17" placeholder="请输入前17位身份证号" maxlength="17">
+        <button onclick="calculate()">计算校验码</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function calculateCheckDigit(id17) {
+            if (!/^\d{17}$/.test(id17)) {
+                return "输入的身份证前17位应为数字";
+            }
+
+            const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const checkCodes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += parseInt(id17[i]) * weights[i];
+            }
+
+            const remainder = sum % 11;
+            return checkCodes[remainder];
+        }
+
+        function calculate() {
+            const id17 = document.getElementById("id17").value;
+            const result = calculateCheckDigit(id17);
+            document.getElementById("result").innerText = "校验码为: " + result;
+        }
+
+        // 添加事件监听器，检测回车键
+        document.getElementById("id17").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                calculate();
+            }
+        });
+    </script>
+</body>
+</html>
