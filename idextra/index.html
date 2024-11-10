@@ -16,7 +16,8 @@
 
   <div>
     <h2>18位身份证号码解析</h2>
-    <input type="text" id="idCard18" placeholder="请输入18位身份证号码" oninput="parse18IdCard()">
+    <input type="text" id="idCard18" placeholder="请输入18位身份证号码">
+    <button onclick="parse18IdCard()">解析</button>
     <div id="result18"></div>
   </div>
 
@@ -187,7 +188,7 @@
       }
     }
 
-    // 加载地区数据
+    // 页面加载时加载区域数据
     loadRegionData();
   </script>
 </body>
