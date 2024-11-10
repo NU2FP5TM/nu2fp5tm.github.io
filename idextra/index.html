@@ -13,10 +13,10 @@
 </head>
 <body>
   <h1>身份证号码解析工具</h1>
-  
+
   <!-- 15位身份证输入框 -->
   <div>
-    <h2>15位身份证号码解析</h2>
+    <h2>15位身份证号码转换为18位</h2>
     <input type="text" id="idCard15" placeholder="请输入15位身份证号码">
     <button onclick="convert15To18()">转换为18位</button>
     <div id="result15"></div>
@@ -24,7 +24,7 @@
 
   <!-- 17位身份证输入框 -->
   <div>
-    <h2>17位身份证号码解析</h2>
+    <h2>17位身份证号码计算校验码并转换为18位</h2>
     <input type="text" id="idCard17" placeholder="请输入17位身份证号码">
     <button onclick="convert17To18()">计算校验码并转换为18位</button>
     <div id="result17"></div>
@@ -39,7 +39,7 @@
   </div>
 
   <script>
-    let regions = {};  // 存储区域信息
+    let regions = {}; // 存储区域信息
 
     // 加载 region.txt 文件
     async function loadRegionData() {
@@ -47,7 +47,7 @@
       const text = await response.text();
 
       text.split('\n').forEach(line => {
-        line = line.trim();  // 去掉每行前后的空白字符
+        line = line.trim(); // 去掉每行前后的空白字符
         if (line) {
           const codeMatch = line.match(/^(\d{2}|\d{6})/);  // 匹配前2位或前6位
           if (!codeMatch) return;
@@ -130,32 +130,42 @@
     }
 
     // 15位转18位身份证号码
-    function convert15To18(idCard) {
-      const year = '19' + idCard.slice(6, 8);
-      const month = idCard.slice(8, 10);
-      const day = idCard.slice(10, 12);
-      const regionCode = idCard.slice(0, 6);
-      const sequence = idCard.slice(12, 15);
+    function convert15To18() {
+      const idCard15 = document.getElementById('idCard15').value.trim();
+      const resultDiv = document.getElementById('result15');
 
-      const tempId = `${regionCode}${year}${month}${day}${sequence}`;
-      const checkCode = calculateCheckCode(tempId);
-      return `${tempId}${checkCode}`;
-    }
-
-    // 17位转18位身份证号码（计算校验码）
-    function convert17To18(idCard) {
-      if (idCard.length === 17) {
-        const regionCode = idCard.slice(0, 6);
-        const year = idCard.slice(6, 10);
-        const month = idCard.slice(10, 12);
-        const day = idCard.slice(12, 14);
-        const sequence = idCard.slice(14, 17);
+      if (idCard15.length === 15) {
+        const year = '19' + idCard15.slice(6, 8);
+        const month = idCard15.slice(8, 10);
+        const day = idCard15.slice(10, 12);
+        const regionCode = idCard15.slice(0, 6);
+        const sequence = idCard15.slice(12, 15);
 
         const tempId = `${regionCode}${year}${month}${day}${sequence}`;
         const checkCode = calculateCheckCode(tempId);
-        const fullId = `${tempId}${checkCode}`;
+        resultDiv.innerHTML = `转换后的18位身份证号为：${tempId}${checkCode}`;
+      } else {
+        resultDiv.innerHTML = '请输入有效的15位身份证号码';
+      }
+    }
 
-        document.getElementById('result17').innerHTML = `计算出的18位身份证号为：${fullId}`;
+    // 17位转18位身份证号码（计算校验码）
+    function convert17To18() {
+      const idCard17 = document.getElementById('idCard17').value.trim();
+      const resultDiv = document.getElementById('result17');
+
+      if (idCard17.length === 17) {
+        const regionCode = idCard17.slice(0, 6);
+        const year = idCard17.slice(6, 10);
+        const month = idCard17.slice(10, 12);
+        const day = idCard17.slice(12, 14);
+        const sequence = idCard17.slice(14, 17);
+
+        const tempId = `${regionCode}${year}${month}${day}${sequence}`;
+        const checkCode = calculateCheckCode(tempId);
+        resultDiv.innerHTML = `计算出的18位身份证号为：${tempId}${checkCode}`;
+      } else {
+        resultDiv.innerHTML = '请输入有效的17位身份证号码';
       }
     }
 
