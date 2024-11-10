@@ -97,23 +97,21 @@
 
       if (regions[provinceCode]) {
         const provinceName = regions[provinceCode].name;
+        let region = `${provinceName}`;
         if (regions[provinceCode].cities[cityCode]) {
           const cityName = regions[provinceCode].cities[cityCode].name;
+          region += ` ${cityName}`;
           if (regions[provinceCode].cities[cityCode].districts[districtCode]) {
             const district = regions[provinceCode].cities[cityCode].districts[districtCode];
-            let region = `${provinceName} ${cityName} ${district.name}`;
+            region += ` ${district.name}`;
             if (district.status === 'disbanded') {
               region += ' <span class="disbanded">(该地区已被撤并)</span>';
             } else if (district.status === 'unauthorized') {
               region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
             }
-            return region;
-          } else {
-            return `${provinceName} ${cityName}`;
           }
-        } else {
-          return `${provinceName}`;
         }
+        return region;
       }
       return '无法识别签发地';
     }
@@ -140,52 +138,18 @@
       }
     }
 
-    // 校验18位身份证号码是否有效
+    // 校验身份证号码是否有效
     function isValidIdCard(idCard) {
-      const factors = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-      const checkCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]; // 校验权重
+      const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']; // 校验码字符
+
       let sum = 0;
-
       for (let i = 0; i < 17; i++) {
-        sum += parseInt(idCard.charAt(i)) * factors[i];
+        sum += parseInt(idCard.charAt(i)) * weights[i];
       }
-      const checkDigit = checkCode[sum % 11];
-      return idCard.charAt(17).toUpperCase() === checkDigit;
-    }
-
-    // 15转18
-    function convert15To18() {
-      const idCard15 = document.getElementById('idCard15').value.trim();
-      const yearPrefix = document.getElementById('yearOption').value;
-      const resultDiv = document.getElementById('result15');
-
-      if (idCard15.length === 15) {
-        const birthYear = yearPrefix + idCard15.slice(6, 8); // 补全年份
-        const idCard18 = idCard15.slice(0, 6) + birthYear + idCard15.slice(8) + calculateCheckDigit(idCard15);
-        resultDiv.innerHTML = `转换后的18位身份证号码：${idCard18}`;
-      } else {
-        resultDiv.innerHTML = '请输入15位身份证号码';
-      }
-    }
-
-    // 校验15位身份证号码的校验码
-    function calculateCheckDigit(idCard15) {
-      const sum = [...idCard15].reduce((acc, curr, index) => acc + parseInt(curr) * (index < 8 ? 7 - index : 0), 0);
-      const checkCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
-      return checkCode[sum % 11];
-    }
-
-    // 18转15
-    function convert18To15() {
-      const idCard18 = document.getElementById('idCard18To15').value.trim();
-      const resultDiv = document.getElementById('result18To15');
-
-      if (idCard18.length === 18) {
-        const idCard15 = idCard18.slice(0, 6) + idCard18.slice(8, 17);
-        resultDiv.innerHTML = `转换后的15位身份证号码：${idCard15}`;
-      } else {
-        resultDiv.innerHTML = '请输入18位身份证号码';
-      }
+      const mod = sum % 11;
+      const checkChar = verifyCode[mod];
+      return idCard.charAt(17).toUpperCase() === checkChar;
     }
 
     // 页面加载时加载区域数据
