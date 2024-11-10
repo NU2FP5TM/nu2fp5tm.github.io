@@ -176,34 +176,6 @@
       return checkCode[sum % 11];
     }
 
-    // 解析15位身份证号码
-    function convert15To18() {
-      const idCard15 = document.getElementById('idCard15').value.trim();
-      const resultDiv = document.getElementById('result15');
-      
-      if (idCard15.length === 15) {
-        const regionCode = idCard15.slice(0, 6);
-        resultDiv.innerHTML = `签发地：${getRegion(regionCode)}<br>`;
-        resultDiv.innerHTML += `转换为18位身份证号：${convert15To18(idCard15)}`;
-      } else {
-        resultDiv.innerHTML = '请输入有效的15位身份证号码';
-      }
-    }
-
-    // 解析17位身份证号码并补充校验码
-    function parse17IdCard() {
-      const idCard17 = document.getElementById('idCard17').value.trim();
-      const resultDiv = document.getElementById('result17');
-      
-      if (idCard17.length === 17) {
-        const regionCode = idCard17.slice(0, 6);
-        resultDiv.innerHTML = `签发地：${getRegion(regionCode)}<br>`;
-        convert17To18(idCard17);
-      } else {
-        resultDiv.innerHTML = '请输入有效的17位身份证号码';
-      }
-    }
-
     // 解析18位身份证号码
     function parse18IdCard() {
       const idCard18 = document.getElementById('idCard18').value.trim();
@@ -225,7 +197,7 @@
       }
     }
 
-    // 加载区域数据
+    // 页面加载时初始化
     loadRegionData();
   </script>
 </body>
