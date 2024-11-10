@@ -22,6 +22,14 @@
     <div id="result15"></div>
   </div>
 
+  <!-- 17位身份证输入框 -->
+  <div>
+    <h2>17位身份证号码解析</h2>
+    <input type="text" id="idCard17" placeholder="请输入17位身份证号码">
+    <button onclick="convert17To18()">计算校验码并转换为18位</button>
+    <div id="result17"></div>
+  </div>
+
   <!-- 18位身份证输入框 -->
   <div>
     <h2>18位身份证号码解析</h2>
@@ -134,6 +142,23 @@
       return `${tempId}${checkCode}`;
     }
 
+    // 17位转18位身份证号码（计算校验码）
+    function convert17To18(idCard) {
+      if (idCard.length === 17) {
+        const regionCode = idCard.slice(0, 6);
+        const year = idCard.slice(6, 10);
+        const month = idCard.slice(10, 12);
+        const day = idCard.slice(12, 14);
+        const sequence = idCard.slice(14, 17);
+
+        const tempId = `${regionCode}${year}${month}${day}${sequence}`;
+        const checkCode = calculateCheckCode(tempId);
+        const fullId = `${tempId}${checkCode}`;
+
+        document.getElementById('result17').innerHTML = `计算出的18位身份证号为：${fullId}`;
+      }
+    }
+
     // 18位转15位身份证号码
     function convert18To15(idCard) {
       return idCard.slice(0, 6) + idCard.slice(8, 17);
@@ -165,24 +190,36 @@
       }
     }
 
+    // 解析17位身份证号码并补充校验码
+    function parse17IdCard() {
+      const idCard17 = document.getElementById('idCard17').value.trim();
+      const resultDiv = document.getElementById('result17');
+      
+      if (idCard17.length === 17) {
+        const regionCode = idCard17.slice(0, 6);
+        resultDiv.innerHTML = `签发地：${getRegion(regionCode)}<br>`;
+        convert17To18(idCard17);
+      } else {
+        resultDiv.innerHTML = '请输入有效的17位身份证号码';
+      }
+    }
+
     // 解析18位身份证号码
     function parse18IdCard() {
       const idCard18 = document.getElementById('idCard18').value.trim();
       const resultDiv = document.getElementById('result18');
-      
+
       if (idCard18.length === 18) {
         const regionCode = idCard18.slice(0, 6);
         resultDiv.innerHTML = `签发地：${getRegion(regionCode)}<br>`;
-        
-        if (isValidIdCard(idCard18)) {
-          const birthDate = `${idCard18.slice(6, 10)}-${idCard18.slice(10, 12)}-${idCard18.slice(12, 14)}`;
-          const gender = parseInt(idCard18.charAt(16)) % 2 === 0 ? '女' : '男';
-          resultDiv.innerHTML += `<span class="valid">该身份证号码有效</span><br>出生日期：${birthDate}<br>性别：${gender}`;
-        } else {
-          resultDiv.innerHTML += `<span class="invalid">该身份证号码无效</span>`;
-        }
+        resultDiv.innerHTML += `出生日期：${idCard18.slice(6, 10)}-${idCard18.slice(10, 12)}-${idCard18.slice(12, 14)}<br>`;
+        resultDiv.innerHTML += `性别：${parseInt(idCard18.charAt(16)) % 2 === 0 ? '女' : '男'}<br>`;
 
-        resultDiv.innerHTML += `转换为15位身份证号：${convert18To15(idCard18)}`;
+        if (isValidIdCard(idCard18)) {
+          resultDiv.innerHTML += `<span class="valid">该身份证号有效</span>`;
+        } else {
+          resultDiv.innerHTML += `<span class="invalid">该身份证号无效</span>`;
+        }
       } else {
         resultDiv.innerHTML = '请输入有效的18位身份证号码';
       }
