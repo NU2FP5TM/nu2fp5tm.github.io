@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>身份证号码解析</title>
+  <style>
+    .invalid { color: red; }
+    .valid { color: green; }
+    .disbanded { color: red; }
+    .unauthorized { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>身份证号码解析</h1>
+  <label for="idCardInput">输入身份证号：</label>
+  <input type="text" id="idCardInput" maxlength="18" placeholder="请输入15或18位身份证号码">
+  <button onclick="analyzeIdCard()">解析</button>
+
+  <div id="result"></div>
+
+  <!-- 18位转15位输入框 -->
+  <h2>18位转15位</h2>
+  <input type="text" id="idCard18To15Input" maxlength="18" placeholder="请输入18位身份证号码">
+  <button onclick="convertTo15()">转换为15位</button>
+  <div id="convertResult"></div>
+
+  <script>
+    // 回车键触发解析
+    document.getElementById('idCardInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        analyzeIdCard();
+      }
+    });
+
+    // 加载地区数据，包括省级数据
+    async function loadRegionData() {
+      const response = await fetch('region.txt');
+      const text = await response.text();
+      const regions = {};
+      const provinces = {};  // 用于存储前2位省份信息
+
+      text.split('\n').forEach(line => {
+        line = line.trim();
+        if (line) {
+          const codeMatch = line.match(/^(\d{2}|\d{6})/);  // 匹配前6位或前2位
+          if (!codeMatch) return;
+
+          const code = codeMatch[0];
+          let description = line.replace(code, '').trim();
+          let status = 'normal';
+
+          if (description.startsWith('[') && description.endsWith(']')) {
+            description = description.slice(1, -1);
+            status = 'disbanded';
+          } else if (description.endsWith('*')) {
+            description = description.slice(0, -1);
+            status = 'unauthorized';
+          }
+
+          if (code.length === 6) {
+            // 存储前6位完整地区代码
+            regions[code] = { name: description, status };
+          } else if (code.length === 2) {
+            // 存储前2位省级代码
+            provinces[code] = description;
+          }
+        }
+      });
+
+      return { regions, provinces };
+    }
+
+    // 计算校验码
+    function calculateChecksum(id) {
+      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+      const checksumChars = '10X98765432';
+      let sum = 0;
+      for (let i = 0; i < 17; i++) {
+        sum += parseInt(id[i]) * weights[i];
+      }
+      return checksumChars[sum % 11];
+    }
+
+    // 分析身份证号
+    async function analyzeIdCard() {
+      const idCardInput = document.getElementById('idCardInput').value.trim();
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
+
+      // 检查输入格式
+      if (!/^\d{15}$|^\d{17}(\d|X)?$/.test(idCardInput)) {
+        resultDiv.innerHTML = '<p class="invalid">请输入有效的15位或18位身份证号码</p>';
+        return;
+      }
+
+      const { regions, provinces } = await loadRegionData();
+      let idCard = idCardInput;
+
+      if (idCard.length === 15) {
+        // 15位身份证号码补全
+        const century = confirm('请选择生日的世纪：按“确定”选择19**年，按“取消”选择20**年') ? '19' : '20';
+        idCard = idCard.slice(0, 6) + century + idCard.slice(6);
+        const checksum = calculateChecksum(idCard);
+        idCard += checksum;
+        resultDiv.innerHTML = `<p>补全后的18位身份证号码是：${idCard}</p>`;
+      } else if (idCard.length === 17) {
+        // 17位身份证号码补全
+        const checksum = calculateChecksum(idCard);
+        idCard += checksum;
+        resultDiv.innerHTML = `<p>您需要校验的身份证在经过计算后的身份证号码是：${idCard}</p>`;
+      }
+
+      // 提取信息
+      const regionCode = idCard.substring(0, 6);
+      const provinceCode = idCard.substring(0, 2);
+      const birthday = idCard.substring(6, 14);
+      const genderCode = idCard[16];
+      const checksum = idCard[17];
+
+      // 匹配地区信息
+      let regionInfo = regions[regionCode];
+      let regionDisplay = '';
+
+      if (regionInfo) {
+        regionDisplay = regionInfo.name;
+        if (regionInfo.status === 'disbanded') {
+          regionDisplay += ' <span class="disbanded">（该地区已被撤并）</span>';
+        } else if (regionInfo.status === 'unauthorized') {
+          regionDisplay += ' <span class="unauthorized">（该地区事实存在，但属于国务院不承认的黑区）</span>';
+        }
+      } else if (provinces[provinceCode]) {
+        // 匹配省份信息
+        regionDisplay = `未知地区 (${provinces[provinceCode]})`;
+      } else {
+        // 无匹配时的默认显示
+        regionDisplay = '未知地区';
+      }
+
+      const birthDate = `${birthday.slice(0, 4)}-${birthday.slice(4, 6)}-${birthday.slice(6, 8)}`;
+      const gender = genderCode % 2 === 1 ? '男' : '女';
+
+      const isValid = checksum.toUpperCase() === calculateChecksum(idCard);
+      resultDiv.innerHTML += `<p class="${isValid ? 'valid' : 'invalid'}">该身份证号码${isValid ? '有效' : '无效'}</p>`;
+
+      resultDiv.innerHTML += `
+        <p>签发地：${regionDisplay}</p>
+        <p>出生日期：${birthDate}</p>
+        <p>性别：${gender}</p>
+      `;
+    }
+
+    // 18位转15位
+    function convertTo15() {
+      const idCard18To15Input = document.getElementById('idCard18To15Input').value.trim();
+      const convertResultDiv = document.getElementById('convertResult');
+      convertResultDiv.innerHTML = '';
+
+      if (!/^\d{17}(\d|X)$/.test(idCard18To15Input)) {
+        convertResultDiv.innerHTML = '<p class="invalid">请输入有效的18位身份证号码</p>';
+        return;
+      }
+
+      const idCard15 = idCard18To15Input.slice(0, 6) + idCard18To15Input.slice(8, 17);
+      convertResultDiv.innerHTML = `<p>转换后的15位身份证号码是：${idCard15}</p>`;
+    }
+  </script>
+</body>
+</html>
