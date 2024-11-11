@@ -175,7 +175,7 @@
       if (idCard15.length === 15) {
         const year = yearPrefix + idCard15.slice(6, 8);
         const monthDay = idCard15.slice(8, 12);
-        const newIdCard18 = idCard15.slice(0, 6) + year + monthDay + generateCheckCode(idCard15);
+        const newIdCard18 = idCard15.slice(0, 6) + year + monthDay + generateCheckCode(idCard15.slice(0, 17) + year + monthDay);
         document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
       }
     }
