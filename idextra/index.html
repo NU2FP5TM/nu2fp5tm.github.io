@@ -16,9 +16,9 @@
 
   <div>
     <h2>18位身份证号码解析</h2>
-    <input type="text" id="idCard18" placeholder="请输入18位身份证号码">
+    <input type="text" id="idCardInput" placeholder="请输入18位身份证号码">
     <button onclick="parse18IdCard()">解析</button>
-    <div id="result18"></div>
+    <div id="output"></div>
   </div>
 
   <div>
@@ -41,135 +41,124 @@
 
   <script>
    let regions = {};
+   let dataLoaded = false; // 添加数据加载标志
 
-async function loadRegionData() {
-  try {
-    const response = await fetch('region.json');
-    regions = await response.json();
-    console.log("Region data loaded:", regions);  // 检查数据加载情况
-  } catch (error) {
-    console.error("Error loading region data:", error);
-  }
-}
+   async function loadRegionData() {
+     try {
+       const response = await fetch('region.json');
+       regions = await response.json();
+       dataLoaded = true; // 数据加载成功
+       console.log("Region data loaded:", regions);  // 检查数据加载情况
+     } catch (error) {
+       console.error("Error loading region data:", error);
+     }
+   }
 
-function getRegion(code) {
-  const provinceCode = code.slice(0, 2);
-  const cityCode = code.slice(0, 4);
-  const districtCode = code.slice(0, 6);
+   function getRegion(code) {
+     const provinceCode = code.slice(0, 2);
+     const cityCode = code.slice(0, 4);
+     const districtCode = code.slice(0, 6);
 
-  let region = '';
-  let annotations = [];
+     let region = '';
+     let annotations = [];
 
-  // 省级解析
-  if (regions[provinceCode]) {
-    const province = regions[provinceCode];
-    region += `${province.name}`;
+     if (regions[provinceCode]) {
+       const province = regions[provinceCode];
+       region += `${province.name}`;
 
-    // 市级解析
-    if (province.cities && province.cities[cityCode]) {
-      const city = province.cities[cityCode];
-      region += ` ${city.name}`;
+       if (province.cities && province.cities[cityCode]) {
+         const city = province.cities[cityCode];
+         region += ` ${city.name}`;
 
-      // 区县解析
-      if (city.districts && city.districts[districtCode]) {
-        let districtName = city.districts[districtCode];
+         if (city.districts && city.districts[districtCode]) {
+           let districtName = city.districts[districtCode];
 
-        // 检查是否为撤销区
-        if (districtName.includes("[")) {
-          annotations.push("<span style='color: red;'>(该地区已被撤并)</span>");
-          districtName = districtName.replace(/\[|\]/g, "");  // 去掉方括号显示名称
-        }
+           if (districtName.includes("[")) {
+             annotations.push("<span style='color: red;'>(该地区已被撤并)</span>");
+             districtName = districtName.replace(/\[|\]/g, "");
+           }
 
-        // 检查是否为黑区
-        if (districtName.includes("*")) {
-          annotations.push("<span style='color: blue;'>(该地区事实存在，但属于国务院不承认的黑区)</span>");
-          districtName = districtName.replace("*", "");  // 去掉星号显示名称
-        }
+           if (districtName.includes("*")) {
+             annotations.push("<span style='color: blue;'>(该地区事实存在，但属于国务院不承认的黑区)</span>");
+             districtName = districtName.replace("*", "");
+           }
 
-        region += ` ${districtName}`;
-      }
-    }
-  }
+           region += ` ${districtName}`;
+         }
+       }
+     }
 
-  // 如果有备注信息，将其附加到region字符串中
-  return region + " " + annotations.join(" ");
-}
+     return region + " " + annotations.join(" ");
+   }
 
-function parse18IdCard() {
-  const idCard = document.getElementById("idCardInput").value;
-  const output = document.getElementById("output");
+   function parse18IdCard() {
+     if (!dataLoaded) {
+       alert("地区数据尚未加载完成，请稍后再试！");
+       return;
+     }
 
-  if (idCard.length === 18) {
-    // 解析签发地
-    const region = getRegion(idCard.slice(0, 6));
+     const idCard = document.getElementById("idCardInput").value;
+     const output = document.getElementById("output");
 
-    // 解析生日
-    const birthDate = `${idCard.slice(6, 10)}-${idCard.slice(10, 12)}-${idCard.slice(12, 14)}`;
+     if (idCard.length === 18) {
+       const region = getRegion(idCard.slice(0, 6));
+       const birthDate = `${idCard.slice(6, 10)}-${idCard.slice(10, 12)}-${idCard.slice(12, 14)}`;
+       const gender = parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
+       const isValid = isValidIdCard(idCard);
+       const validityText = isValid ? `<span class="valid">该身份证号有效</span>` : `<span class="invalid">该身份证号无效</span>`;
 
-    // 解析性别
-    const gender = parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
+       output.innerHTML = `签发地：${region}<br>出生日期：${birthDate}<br>性别：${gender}<br>${validityText}`;
+     } else {
+       output.innerHTML = "请输入18位的身份证号码";
+     }
+   }
 
-    // 校验身份证号有效性
-    const isValid = isValidIdCard(idCard);
-    const validityText = isValid ? `<span style="color: green;">该身份证号有效</span>` : `<span style="color: red;">该身份证号无效</span>`;
+   function isValidIdCard(idCard) {
+     const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+     const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-    // 输出解析结果
-    output.innerHTML = `签发地：${region}<br>出生日期：${birthDate}<br>性别：${gender}<br>${validityText}`;
-  } else {
-    output.innerHTML = "请输入18位的身份证号码";
-  }
-}
+     let sum = 0;
+     for (let i = 0; i < 17; i++) {
+       sum += parseInt(idCard.charAt(i)) * weights[i];
+     }
+     const mod = sum % 11;
+     return idCard.charAt(17).toUpperCase() === verifyCode[mod];
+   }
 
-function isValidIdCard(idCard) {
-  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-  const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+   function convert15To18() {
+     const idCard15 = document.getElementById('idCard15').value.trim();
+     const yearPrefix = document.getElementById('yearOption').value;
 
-  let sum = 0;
-  for (let i = 0; i < 17; i++) {
-    sum += parseInt(idCard.charAt(i)) * weights[i];
-  }
-  const mod = sum % 11;
-  const checkChar = verifyCode[mod];
-  return idCard.charAt(17).toUpperCase() === checkChar;
-}
+     if (idCard15.length === 15) {
+       const year = yearPrefix + idCard15.slice(6, 8);
+       const monthDay = idCard15.slice(8, 12);
+       const newIdCard18 = idCard15.slice(0, 6) + year + monthDay + generateCheckCode(idCard15.slice(0, 17) + year + monthDay);
+       document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
+     }
+   }
 
-    // 15转18功能
-    function convert15To18() {
-      const idCard15 = document.getElementById('idCard15').value.trim();
-      const yearPrefix = document.getElementById('yearOption').value;
+   function convert18To15() {
+     const idCard18 = document.getElementById('idCard18To15').value.trim();
 
-      if (idCard15.length === 15) {
-        const year = yearPrefix + idCard15.slice(6, 8);
-        const monthDay = idCard15.slice(8, 12);
-        const newIdCard18 = idCard15.slice(0, 6) + year + monthDay + generateCheckCode(idCard15.slice(0, 17) + year + monthDay);
-        document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
-      }
-    }
+     if (idCard18.length === 18) {
+       const newIdCard15 = idCard18.slice(0, 6) + idCard18.slice(8, 17);
+       document.getElementById('result18To15').innerHTML = `转换后的15位身份证号码是：${newIdCard15}`;
+     }
+   }
 
-    // 18转15功能
-    function convert18To15() {
-      const idCard18 = document.getElementById('idCard18To15').value.trim();
+   function generateCheckCode(idCard) {
+     const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+     const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-      if (idCard18.length === 18) {
-        const newIdCard15 = idCard18.slice(0, 6) + idCard18.slice(8, 17);
-        document.getElementById('result18To15').innerHTML = `转换后的15位身份证号码是：${newIdCard15}`;
-      }
-    }
+     let sum = 0;
+     for (let i = 0; i < 17; i++) {
+       sum += parseInt(idCard.charAt(i)) * weights[i];
+     }
+     const mod = sum % 11;
+     return verifyCode[mod];
+   }
 
-    // 生成身份证号码的校验码
-    function generateCheckCode(idCard) {
-      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-      const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
-
-      let sum = 0;
-      for (let i = 0; i < 17; i++) {
-        sum += parseInt(idCard.charAt(i)) * weights[i];
-      }
-      const mod = sum % 11;
-      return verifyCode[mod];
-    }
-
-    loadRegionData();
+   loadRegionData();
   </script>
 </body>
 </html>
