@@ -48,37 +48,33 @@
       const text = await response.text();
 
       text.split('\n').forEach(line => {
-        line = line.trim(); // 去掉每行前后的空白字符
+        line = line.trim();
         if (line) {
-          const codeMatch = line.match(/^(\d{2}|\d{4}|\d{6})/);  // 匹配前2位、前4位或前6位
+          const codeMatch = line.match(/^(\d{2}|\d{4}|\d{6})/);
           if (!codeMatch) return;
 
-          const code = codeMatch[0];  // 获取区域的前2位、前4位或前6位代码
-          let description = line.replace(code, '').trim(); // 去掉代码部分
+          const code = codeMatch[0];
+          let description = line.replace(code, '').trim();
           let status = 'normal';
 
-          // 解析撤并或黑区标记
+          // 处理撤销或黑区标记
           if (description.startsWith('[') && description.endsWith(']')) {
-            description = description.slice(1, -1); // 去掉方括号
+            description = description.slice(1, -1);
             status = 'disbanded';
           } else if (description.endsWith('*')) {
-            description = description.slice(0, -1); // 去掉 * 后缀
+            description = description.slice(0, -1);
             status = 'unauthorized';
           }
 
-          // 处理省级
+          // 存储省、市、区信息
           if (code.length === 2) {
-            regions[code] = { name: description, cities: {} };
-          }
-          // 处理市级
-          else if (code.length === 4) {
+            regions[code] = { name: description, cities: {}, status };
+          } else if (code.length === 4) {
             const provinceCode = code.slice(0, 2);
             if (regions[provinceCode]) {
-              regions[provinceCode].cities[code] = { name: description, districts: {} };
+              regions[provinceCode].cities[code] = { name: description, districts: {}, status };
             }
-          }
-          // 处理区级
-          else if (code.length === 6) {
+          } else if (code.length === 6) {
             const provinceCode = code.slice(0, 2);
             const cityCode = code.slice(0, 4);
             if (regions[provinceCode] && regions[provinceCode].cities[cityCode]) {
@@ -89,31 +85,50 @@
       });
     }
 
-    // 获取身份证的签发地
+    // 根据前2位、前4位和前6位获取完整的地区信息
     function getRegion(code) {
       const provinceCode = code.slice(0, 2);
       const cityCode = code.slice(0, 4);
       const districtCode = code.slice(0, 6);
 
+      let region = '';
+
+      // 获取省份信息
       if (regions[provinceCode]) {
-        const provinceName = regions[provinceCode].name;
-        let region = `${provinceName}`;
-        if (regions[provinceCode].cities[cityCode]) {
-          const cityName = regions[provinceCode].cities[cityCode].name;
-          region += ` ${cityName}`;
-          if (regions[provinceCode].cities[cityCode].districts[districtCode]) {
-            const district = regions[provinceCode].cities[cityCode].districts[districtCode];
-            region += ` ${district.name}`;
-            if (district.status === 'disbanded') {
-              region += ' <span class="disbanded">(该地区已被撤并)</span>';
-            } else if (district.status === 'unauthorized') {
-              region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
-            }
-          }
+        const province = regions[provinceCode];
+        region += `${province.name}`;
+        if (province.status === 'disbanded') {
+          region += ' <span class="disbanded">(该地区已被撤并)</span>';
+        } else if (province.status === 'unauthorized') {
+          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
         }
-        return region;
+      } else {
+        return '无法识别签发地';
       }
-      return '无法识别签发地';
+
+      // 获取市级信息
+      if (regions[provinceCode].cities[cityCode]) {
+        const city = regions[provinceCode].cities[cityCode];
+        region += ` ${city.name}`;
+        if (city.status === 'disbanded') {
+          region += ' <span class="disbanded">(该地区已被撤并)</span>';
+        } else if (city.status === 'unauthorized') {
+          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
+        }
+      }
+
+      // 获取区县信息
+      if (regions[provinceCode].cities[cityCode].districts[districtCode]) {
+        const district = regions[provinceCode].cities[cityCode].districts[districtCode];
+        region += ` ${district.name}`;
+        if (district.status === 'disbanded') {
+          region += ' <span class="disbanded">(该地区已被撤并)</span>';
+        } else if (district.status === 'unauthorized') {
+          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
+        }
+      }
+
+      return region;
     }
 
     // 解析18位身份证号码
@@ -140,8 +155,8 @@
 
     // 校验身份证号码是否有效
     function isValidIdCard(idCard) {
-      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]; // 校验权重
-      const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']; // 校验码字符
+      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+      const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
 
       let sum = 0;
       for (let i = 0; i < 17; i++) {
