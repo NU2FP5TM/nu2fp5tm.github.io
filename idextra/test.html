@@ -142,7 +142,11 @@ function convert15To18() {
     const monthDay = idCard15.slice(8, 12);
     const newIdCard17 = idCard15.slice(0, 6) + year + monthDay;
 
+    console.log("17位号码:", newIdCard17);  // 调试输出
+
     const checkCode = generateCheckCode(newIdCard17);
+    console.log("生成的校验码:", checkCode); // 调试输出
+
     if (checkCode === undefined) {
       document.getElementById('result15').innerHTML = "生成校验码失败";
       return;
