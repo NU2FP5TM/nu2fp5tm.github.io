@@ -40,52 +40,18 @@
   </div>
 
   <script>
-    let regions = {}; // 存储区域信息
+   let regions = {};
 
-    // 加载 region.txt 文件
     async function loadRegionData() {
-      const response = await fetch('region.txt');
-      const text = await response.text();
-
-      text.split('\n').forEach(line => {
-        line = line.trim();
-        if (line) {
-          const codeMatch = line.match(/^(\d{2}|\d{4}|\d{6})/);
-          if (!codeMatch) return;
-
-          const code = codeMatch[0];
-          let description = line.replace(code, '').trim();
-          let status = 'normal';
-
-          // 处理撤销或黑区标记
-          if (description.startsWith('[') && description.endsWith(']')) {
-            description = description.slice(1, -1);
-            status = 'disbanded';
-          } else if (description.endsWith('*')) {
-            description = description.slice(0, -1);
-            status = 'unauthorized';
-          }
-
-          // 存储省、市、区信息
-          if (code.length === 2) {
-            regions[code] = { name: description, cities: {}, status };
-          } else if (code.length === 4) {
-            const provinceCode = code.slice(0, 2);
-            if (regions[provinceCode]) {
-              regions[provinceCode].cities[code] = { name: description, districts: {}, status };
-            }
-          } else if (code.length === 6) {
-            const provinceCode = code.slice(0, 2);
-            const cityCode = code.slice(0, 4);
-            if (regions[provinceCode] && regions[provinceCode].cities[cityCode]) {
-              regions[provinceCode].cities[cityCode].districts[code] = { name: description, status };
-            }
-          }
-        }
-      });
+      try {
+        const response = await fetch('region.json');
+        regions = await response.json();
+        console.log("Region data loaded:", regions);
+      } catch (error) {
+        console.error("Error loading region data:", error);
+      }
     }
 
-    // 根据前2位、前4位和前6位获取完整的地区信息
     function getRegion(code) {
       const provinceCode = code.slice(0, 2);
       const cityCode = code.slice(0, 4);
@@ -93,42 +59,30 @@
 
       let region = '';
 
-      // 获取省份信息
       if (regions[provinceCode]) {
         const province = regions[provinceCode];
         region += `${province.name}`;
-        if (province.status === 'disbanded') {
-          region += ' <span class="disbanded">(该地区已被撤并)</span>';
-        } else if (province.status === 'unauthorized') {
-          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
+        if (province.cities[cityCode]) {
+          const city = province.cities[cityCode];
+          region += ` ${city.name}`;
+          if (city.districts[districtCode]) {
+            region += ` ${city.districts[districtCode]}`;
+          }
         }
+      }
+
+      return region || '无法识别签发地';
+    }
+
+    function parse18IdCard() {
+      const idCard = document.getElementById("idCardInput").value;
+      const output = document.getElementById("output");
+      if (idCard.length === 18 || idCard.length === 15) {
+        const region = getRegion(idCard);
+        output.innerText = `签发地：${region}`;
       } else {
-        return '无法识别签发地';
+        output.innerText = "请输入15或18位的身份证号码";
       }
-
-      // 获取市级信息
-      if (regions[provinceCode].cities[cityCode]) {
-        const city = regions[provinceCode].cities[cityCode];
-        region += ` ${city.name}`;
-        if (city.status === 'disbanded') {
-          region += ' <span class="disbanded">(该地区已被撤并)</span>';
-        } else if (city.status === 'unauthorized') {
-          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
-        }
-      }
-
-      // 获取区县信息
-      if (regions[provinceCode].cities[cityCode].districts[districtCode]) {
-        const district = regions[provinceCode].cities[cityCode].districts[districtCode];
-        region += ` ${district.name}`;
-        if (district.status === 'disbanded') {
-          region += ' <span class="disbanded">(该地区已被撤并)</span>';
-        } else if (district.status === 'unauthorized') {
-          region += ' <span class="unauthorized">(该地区事实存在，但属于国务院不承认的黑区)</span>';
-        }
-      }
-
-      return region;
     }
 
     // 解析18位身份证号码
