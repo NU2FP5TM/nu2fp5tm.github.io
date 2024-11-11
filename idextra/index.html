@@ -66,14 +66,14 @@ function getRegion(code) {
     region += `${province.name}`;
 
     // 市级解析
-    if (province.cities[cityCode]) {
+    if (province.cities && province.cities[cityCode]) {
       const city = province.cities[cityCode];
       region += ` ${city.name}`;
 
       // 区县解析
-      if (city.districts[districtCode]) {
+      if (city.districts && city.districts[districtCode]) {
         let districtName = city.districts[districtCode];
-        
+
         // 检查是否为撤销区
         if (districtName.includes("[")) {
           annotations.push("<span style='color: red;'>(该地区已被撤并)</span>");
@@ -95,52 +95,43 @@ function getRegion(code) {
   return region + " " + annotations.join(" ");
 }
 
-    function parse18IdCard() {
-      const idCard = document.getElementById("idCardInput").value;
-      const output = document.getElementById("output");
-      if (idCard.length === 18 || idCard.length === 15) {
-        const region = getRegion(idCard);
-        output.innerText = `签发地：${region}`;
-      } else {
-        output.innerText = "请输入15或18位的身份证号码";
-      }
-    }
+function parse18IdCard() {
+  const idCard = document.getElementById("idCardInput").value;
+  const output = document.getElementById("output");
 
-    // 解析18位身份证号码
-    function parse18IdCard() {
-      const idCard18 = document.getElementById('idCard18').value.trim();
-      const resultDiv = document.getElementById('result18');
+  if (idCard.length === 18) {
+    // 解析签发地
+    const region = getRegion(idCard.slice(0, 6));
 
-      if (idCard18.length === 18) {
-        const regionCode = idCard18.slice(0, 6);
-        resultDiv.innerHTML = `签发地：${getRegion(regionCode)}<br>`;
-        resultDiv.innerHTML += `出生日期：${idCard18.slice(6, 10)}-${idCard18.slice(10, 12)}-${idCard18.slice(12, 14)}<br>`;
-        resultDiv.innerHTML += `性别：${parseInt(idCard18.charAt(16)) % 2 === 0 ? '女' : '男'}<br>`;
+    // 解析生日
+    const birthDate = `${idCard.slice(6, 10)}-${idCard.slice(10, 12)}-${idCard.slice(12, 14)}`;
 
-        // 校验身份证号有效性
-        if (isValidIdCard(idCard18)) {
-          resultDiv.innerHTML += `<span class="valid">该身份证号有效</span>`;
-        } else {
-          resultDiv.innerHTML += `<span class="invalid">该身份证号无效</span>`;
-        }
-      } else {
-        resultDiv.innerHTML = '请输入有效的18位身份证号码';
-      }
-    }
+    // 解析性别
+    const gender = parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
 
-    // 校验身份证号码是否有效
-    function isValidIdCard(idCard) {
-      const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-      const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+    // 校验身份证号有效性
+    const isValid = isValidIdCard(idCard);
+    const validityText = isValid ? `<span style="color: green;">该身份证号有效</span>` : `<span style="color: red;">该身份证号无效</span>`;
 
-      let sum = 0;
-      for (let i = 0; i < 17; i++) {
-        sum += parseInt(idCard.charAt(i)) * weights[i];
-      }
-      const mod = sum % 11;
-      const checkChar = verifyCode[mod];
-      return idCard.charAt(17).toUpperCase() === checkChar;
-    }
+    // 输出解析结果
+    output.innerHTML = `签发地：${region}<br>出生日期：${birthDate}<br>性别：${gender}<br>${validityText}`;
+  } else {
+    output.innerHTML = "请输入18位的身份证号码";
+  }
+}
+
+function isValidIdCard(idCard) {
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+  let sum = 0;
+  for (let i = 0; i < 17; i++) {
+    sum += parseInt(idCard.charAt(i)) * weights[i];
+  }
+  const mod = sum % 11;
+  const checkChar = verifyCode[mod];
+  return idCard.charAt(17).toUpperCase() === checkChar;
+}
 
     // 15转18功能
     function convert15To18() {
