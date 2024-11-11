@@ -42,37 +42,58 @@
   <script>
    let regions = {};
 
-    async function loadRegionData() {
-      try {
-        const response = await fetch('region.json');
-        regions = await response.json();
-        console.log("Region data loaded:", regions);
-      } catch (error) {
-        console.error("Error loading region data:", error);
-      }
-    }
+async function loadRegionData() {
+  try {
+    const response = await fetch('region.json');
+    regions = await response.json();
+    console.log("Region data loaded:", regions);  // 检查数据加载情况
+  } catch (error) {
+    console.error("Error loading region data:", error);
+  }
+}
 
-    function getRegion(code) {
-      const provinceCode = code.slice(0, 2);
-      const cityCode = code.slice(0, 4);
-      const districtCode = code.slice(0, 6);
+function getRegion(code) {
+  const provinceCode = code.slice(0, 2);
+  const cityCode = code.slice(0, 4);
+  const districtCode = code.slice(0, 6);
 
-      let region = '';
+  let region = '';
+  let annotations = [];
 
-      if (regions[provinceCode]) {
-        const province = regions[provinceCode];
-        region += `${province.name}`;
-        if (province.cities[cityCode]) {
-          const city = province.cities[cityCode];
-          region += ` ${city.name}`;
-          if (city.districts[districtCode]) {
-            region += ` ${city.districts[districtCode]}`;
-          }
+  // 省级解析
+  if (regions[provinceCode]) {
+    const province = regions[provinceCode];
+    region += `${province.name}`;
+
+    // 市级解析
+    if (province.cities[cityCode]) {
+      const city = province.cities[cityCode];
+      region += ` ${city.name}`;
+
+      // 区县解析
+      if (city.districts[districtCode]) {
+        let districtName = city.districts[districtCode];
+        
+        // 检查是否为撤销区
+        if (districtName.includes("[")) {
+          annotations.push("<span style='color: red;'>(该地区已被撤并)</span>");
+          districtName = districtName.replace(/\[|\]/g, "");  // 去掉方括号显示名称
         }
-      }
 
-      return region || '无法识别签发地';
+        // 检查是否为黑区
+        if (districtName.includes("*")) {
+          annotations.push("<span style='color: blue;'>(该地区事实存在，但属于国务院不承认的黑区)</span>");
+          districtName = districtName.replace("*", "");  // 去掉星号显示名称
+        }
+
+        region += ` ${districtName}`;
+      }
     }
+  }
+
+  // 如果有备注信息，将其附加到region字符串中
+  return region + " " + annotations.join(" ");
+}
 
     function parse18IdCard() {
       const idCard = document.getElementById("idCardInput").value;
