@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>身份证号码解析工具</title>
+  <style>
+    .invalid { color: red; }
+    .valid { color: green; }
+    .disbanded { color: red; }
+    .unauthorized { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>身份证号码解析工具</h1>
+
+  <div>
+    <h2>18位身份证号码解析</h2>
+    <input type="text" id="idCardInput" placeholder="请输入18位身份证号码">
+    <button onclick="parse18IdCard()">解析</button>
+    <div id="output"></div>
+  </div>
+
+  <div>
+    <h2>15位转18位</h2>
+    <input type="text" id="idCard15" placeholder="请输入15位身份证号码">
+    <select id="yearOption">
+      <option value="19">19**年</option>
+      <option value="20">20**年</option>
+    </select>
+    <button onclick="convert15To18()">转换为18位</button>
+    <div id="result15"></div>
+  </div>
+
+  <div>
+    <h2>18位转15位</h2>
+    <input type="text" id="idCard18To15" placeholder="请输入18位身份证号码">
+    <button onclick="convert18To15()">转换为15位</button>
+    <div id="result18To15"></div>
+  </div>
+
+  <script>
+   let regions = {};
+   let dataLoaded = false; // 添加数据加载标志
+
+   async function loadRegionData() {
+     try {
+       const response = await fetch('region.json');
+       regions = await response.json();
+       dataLoaded = true; // 数据加载成功
+       console.log("Region data loaded:", regions);  // 检查数据加载情况
+     } catch (error) {
+       console.error("Error loading region data:", error);
+     }
+   }
+
+   function getRegion(code) {
+     const provinceCode = code.slice(0, 2);
+     const cityCode = code.slice(0, 4);
+     const districtCode = code.slice(0, 6);
+
+     let region = '';
+     let annotations = [];
+
+     if (regions[provinceCode]) {
+       const province = regions[provinceCode];
+       region += `${province.name}`;
+
+       if (province.cities && province.cities[cityCode]) {
+         const city = province.cities[cityCode];
+         region += ` ${city.name}`;
+
+         if (city.districts && city.districts[districtCode]) {
+           let districtName = city.districts[districtCode];
+
+           if (districtName.includes("[")) {
+             annotations.push("<span style='color: red;'>(该地区已被撤并)</span>");
+             districtName = districtName.replace(/\[|\]/g, "");
+           }
+
+           if (districtName.includes("*")) {
+             annotations.push("<span style='color: blue;'>(该地区事实存在，但属于国务院不承认的黑区)</span>");
+             districtName = districtName.replace("*", "");
+           }
+
+           region += ` ${districtName}`;
+         }
+       }
+     }
+
+     return region + " " + annotations.join(" ");
+   }
+
+   function parse18IdCard() {
+     if (!dataLoaded) {
+       alert("地区数据尚未加载完成，请稍后再试！");
+       return;
+     }
+
+     const idCard = document.getElementById("idCardInput").value;
+     const output = document.getElementById("output");
+
+     if (idCard.length === 18) {
+       const region = getRegion(idCard.slice(0, 6));
+       const birthDate = `${idCard.slice(6, 10)}-${idCard.slice(10, 12)}-${idCard.slice(12, 14)}`;
+       const gender = parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
+       const isValid = isValidIdCard(idCard);
+       const validityText = isValid ? `<span class="valid">该身份证号有效</span>` : `<span class="invalid">该身份证号无效</span>`;
+
+       output.innerHTML = `签发地：${region}<br>出生日期：${birthDate}<br>性别：${gender}<br>${validityText}`;
+     } else {
+       output.innerHTML = "请输入18位的身份证号码";
+     }
+   }
+
+   function isValidIdCard(idCard) {
+     const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+     const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+     let sum = 0;
+     for (let i = 0; i < 17; i++) {
+       sum += parseInt(idCard.charAt(i)) * weights[i];
+     }
+     const mod = sum % 11;
+     return idCard.charAt(17).toUpperCase() === verifyCode[mod];
+   }
+
+function convert15To18() {
+  const idCard15Input = document.getElementById('idCard15');
+  const yearOptionSelect = document.getElementById('yearOption');
+
+  if (!idCard15Input || !yearOptionSelect) {
+    console.error("Elements 'idCard15' or 'yearOption' not found.");
+    return;
+  }
+
+  const idCard15 = idCard15Input.value.trim();
+  const yearPrefix = yearOptionSelect.value;
+
+  if (idCard15.length === 15) {
+    const year = yearPrefix + idCard15.slice(6, 8);
+    const monthDay = idCard15.slice(8, 12);
+    const newIdCard17 = idCard15.slice(0, 6) + year + monthDay;
+
+    const checkCode = generateCheckCode(newIdCard17);
+    if (checkCode === undefined) {
+      document.getElementById('result15').innerHTML = "生成校验码失败";
+      return;
+    }
+
+    const newIdCard18 = newIdCard17 + checkCode;
+    document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
+  } else {
+    document.getElementById('result15').innerHTML = "请输入有效的15位身份证号码";
+  }
+}
+
+// 校验码生成函数
+function generateCheckCode(idCard17) {
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+  let sum = 0;
+  for (let i = 0; i < 17; i++) {
+    sum += parseInt(idCard17.charAt(i)) * weights[i];
+  }
+  const mod = sum % 11;
+  return verifyCode[mod];
+}
+
+   function convert18To15() {
+     const idCard18 = document.getElementById('idCard18To15').value.trim();
+
+     if (idCard18.length === 18) {
+       const newIdCard15 = idCard18.slice(0, 6) + idCard18.slice(8, 17);
+       document.getElementById('result18To15').innerHTML = `转换后的15位身份证号码是：${newIdCard15}`;
+     }
+   }
+
+   loadRegionData();
+  </script>
+</body>
+</html>
