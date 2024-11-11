@@ -129,7 +129,6 @@ function convert15To18() {
   const idCard15Input = document.getElementById('idCard15');
   const yearOptionSelect = document.getElementById('yearOption');
 
-  // 检查是否找到元素
   if (!idCard15Input || !yearOptionSelect) {
     console.error("Elements 'idCard15' or 'yearOption' not found.");
     return;
@@ -139,23 +138,32 @@ function convert15To18() {
   const yearPrefix = yearOptionSelect.value;
 
   if (idCard15.length === 15) {
+    // 年份拼接
     const year = yearPrefix + idCard15.slice(6, 8);
     const monthDay = idCard15.slice(8, 12);
-    const newIdCard17 = idCard15.slice(0, 6) + year + monthDay;
+    const last3Digits = idCard15.slice(12, 15); // 取15位号码的最后3位
+
+    // 拼接完整的17位号码
+    const newIdCard17 = idCard15.slice(0, 6) + year + monthDay + last3Digits;
+    console.log("17位号码:", newIdCard17);
 
     // 生成校验码
     const checkCode = generateCheckCode(newIdCard17);
+    console.log("生成的校验码:", checkCode);
+
     if (checkCode === undefined) {
       document.getElementById('result15').innerHTML = "生成校验码失败";
       return;
     }
 
+    // 拼接生成18位号码
     const newIdCard18 = newIdCard17 + checkCode;
     document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
   } else {
     document.getElementById('result15').innerHTML = "请输入有效的15位身份证号码";
   }
 }
+
 
 // 校验码生成函数
 function generateCheckCode(idCard17) {
@@ -177,18 +185,6 @@ function generateCheckCode(idCard17) {
        const newIdCard15 = idCard18.slice(0, 6) + idCard18.slice(8, 17);
        document.getElementById('result18To15').innerHTML = `转换后的15位身份证号码是：${newIdCard15}`;
      }
-   }
-
-   function generateCheckCode(idCard) {
-     const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-     const verifyCode = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
-
-     let sum = 0;
-     for (let i = 0; i < 17; i++) {
-       sum += parseInt(idCard.charAt(i)) * weights[i];
-     }
-     const mod = sum % 11;
-     return verifyCode[mod];
    }
 
    loadRegionData();
