@@ -138,26 +138,32 @@ function convert15To18() {
   const yearPrefix = yearOptionSelect.value;
 
   if (idCard15.length === 15) {
+    // 年份拼接
     const year = yearPrefix + idCard15.slice(6, 8);
     const monthDay = idCard15.slice(8, 12);
-    const newIdCard17 = idCard15.slice(0, 6) + year + monthDay;
+    const last3Digits = idCard15.slice(12, 15); // 取15位号码的最后3位
 
-    console.log("17位号码:", newIdCard17);  // 调试输出
+    // 拼接完整的17位号码
+    const newIdCard17 = idCard15.slice(0, 6) + year + monthDay + last3Digits;
+    console.log("17位号码:", newIdCard17);
 
+    // 生成校验码
     const checkCode = generateCheckCode(newIdCard17);
-    console.log("生成的校验码:", checkCode); // 调试输出
+    console.log("生成的校验码:", checkCode);
 
     if (checkCode === undefined) {
       document.getElementById('result15').innerHTML = "生成校验码失败";
       return;
     }
 
+    // 拼接生成18位号码
     const newIdCard18 = newIdCard17 + checkCode;
     document.getElementById('result15').innerHTML = `转换后的18位身份证号码是：${newIdCard18}`;
   } else {
     document.getElementById('result15').innerHTML = "请输入有效的15位身份证号码";
   }
 }
+
 
 // 校验码生成函数
 function generateCheckCode(idCard17) {
