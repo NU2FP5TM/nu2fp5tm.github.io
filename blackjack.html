@@ -179,14 +179,15 @@
             document.getElementById('bet-info').textContent = `已下注: ${currentBet} 游戏币`;
         }
 
-        // 获取一张牌
         function getCard() {
-            const cards = [
-                { value: 2 }, { value: 3 }, { value: 4 }, { value: 5 }, { value: 6 },
-                { value: 7 }, { value: 8 }, { value: 9 }, { value: 10 }, { value: 10 }, { value: 10 }, { value: 11 }
-            ];
-            return cards[Math.floor(Math.random() * cards.length)];
-        }
+    const cards = [
+        { value: 2 }, { value: 3 }, { value: 4 }, { value: 5 }, { value: 6 },
+        { value: 7 }, { value: 8 }, { value: 9 }, { value: 10 }, { value: 10 }, { value: 10 }, { value: 11 },  // 10, J, Q, K, A
+        { value: 10, face: 'J' }, { value: 10, face: 'Q' }, { value: 10, face: 'K' }, { value: 11, face: 'A' }
+    ];
+    return cards[Math.floor(Math.random() * cards.length)];
+}
+
 
         // 计算手牌总点数
         function getHandValue(hand) {
@@ -209,14 +210,19 @@
             return total;
         }
 
-        // 获取牌面名称
         function getCardName(card) {
-            const cardNames = {
-                2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
-                10: "10", 11: "J", 12: "Q", 13: "K", 14: "A"
-            };
-            return cardNames[card.value];
-        }
+    const cardNames = {
+        2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
+        10: "10", 11: "J", 12: "Q", 13: "K", 14: "A"
+    };
+
+    // 如果卡片有face属性，就返回对应的face
+    if (card.face) {
+        return card.face;
+    }
+    return cardNames[card.value];
+}
+
 
     </script>
 
