@@ -10,17 +10,41 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            margin: 0;
+            box-sizing: border-box;
         }
 
-        .buttons {
-            margin-top: 20px;
-        }
-
-        .button {
+        button {
             margin: 5px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            border: 1px solid #ddd;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .bet-buttons {
+            margin-top: 20px;
+        }
+
+        .bet-info {
+            font-size: 18px;
+            color: green;
+            margin-top: 10px;
+        }
+
+        .game-board {
+            margin-top: 20px;
+        }
+
+        .bet-buttons button {
+            margin: 5px;
         }
 
         .status {
@@ -28,23 +52,26 @@
             font-size: 18px;
         }
 
-        .game-board {
-            margin-top: 20px;
-        }
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
 
-        .bet-buttons {
-            display: flex;
-            justify-content: center;
-        }
+            .bet-buttons button {
+                width: 100%;
+                margin: 10px 0;
+                font-size: 14px;
+            }
 
-        .bet-buttons button {
-            margin: 5px;
-        }
+            .game-board button {
+                width: 100%;
+                padding: 12px;
+            }
 
-        .bet-info {
-            font-size: 18px;
-            color: green;
-            margin-top: 10px;
+            .bet-info {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -74,6 +101,9 @@
     <div class="game-board">
         <button class="button" onclick="startGame()">开始游戏</button>
     </div>
+
+    <!-- 清除缓存按钮 -->
+    <button class="button" onclick="clearCache()">清除缓存</button>
 
     <script>
         let gameCoin = parseInt(localStorage.getItem('gameCoin')) || 200;
@@ -151,9 +181,6 @@
             document.getElementById('game-coin').textContent = gameCoin;
             document.getElementById('status').textContent = resultMessage;
 
-            // 显示庄家的所有手牌
-            alert(`庄家手牌: ${dealerHand.map(card => getCardName(card)).join(', ')} 总点数: ${dealerTotal}`);
-
             // 保存游戏币到localStorage
             localStorage.setItem('gameCoin', gameCoin);
 
@@ -179,50 +206,36 @@
             document.getElementById('bet-info').textContent = `已下注: ${currentBet} 游戏币`;
         }
 
+        // 获取一张牌
         function getCard() {
-    const cards = [
-        { value: 2 }, { value: 3 }, { value: 4 }, { value: 5 }, { value: 6 },
-        { value: 7 }, { value: 8 }, { value: 9 }, { value: 10 }, { value: 10 }, { value: 10 }, { value: 11 },  // 10, J, Q, K, A
-        { value: 10, face: 'J' }, { value: 10, face: 'Q' }, { value: 10, face: 'K' }, { value: 11, face: 'A' }
-    ];
-    return cards[Math.floor(Math.random() * cards.length)];
-}
-
-
-        // 计算手牌总点数
-        function getHandValue(hand) {
-            let total = 0;
-            let aceCount = 0;
-
-            for (let card of hand) {
-                total += card.value;
-                if (card.value === 11) {
-                    aceCount++;
-                }
-            }
-
-            // 如果有Ace并且总点数大于21，Ace的值变为1
-            while (total > 21 && aceCount > 0) {
-                total -= 10;
-                aceCount--;
-            }
-
-            return total;
+            const cards = [
+                { value: 2 }, { value: 3 }, { value: 4 }, { value: 5 }, { value: 6 },
+                { value: 7 }, { value: 8 }, { value: 9 }, { value: 10 }, { value: 10 }, { value: 10 }, { value: 11 },
+                { value: 10, face: 'J' }, { value: 10, face: 'Q' }, { value: 10, face: 'K' }, { value: 11, face: 'A' }
+            ];
+            return cards[Math.floor(Math.random() * cards.length)];
         }
 
+        // 获取牌面名称
         function getCardName(card) {
-    const cardNames = {
-        2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
-        10: "10", 11: "J", 12: "Q", 13: "K", 14: "A"
-    };
+            const cardNames = {
+                2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
+                10: "10", 11: "J", 12: "Q", 13: "K", 14: "A"
+            };
+            if (card.face) {
+                return card.face;
+            }
+            return cardNames[card.value];
+        }
 
-    // 如果卡片有face属性，就返回对应的face
-    if (card.face) {
-        return card.face;
-    }
-    return cardNames[card.value];
-}
-
+        // 清除缓存
+        function clearCache() {
+            if (confirm("你确定要清除缓存吗？这将重置游戏币并清除所有存档。")) {
+                localStorage.removeItem('gameCoin');
+                alert("缓存已清除，请刷新页面！");
+                window.location.reload();
+            }
+        }
 
     </script>
 
