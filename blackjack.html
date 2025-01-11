@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21点游戏</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        .buttons { margin-top: 20px; }
+        .button { margin: 5px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        .status { margin-top: 20px; font-size: 18px; }
+        .game-board { margin-top: 20px; }
+        .bet-buttons { display: flex; justify-content: center; }
+        .bet-buttons button { margin: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>21点游戏</h1>
+    <div class="status">
+        <p>当前游戏币: <span id="game-coin">200</span></p>
+        <p id="status"></p>
+    </div>
+
+    <div class="bet-buttons">
+        <button class="button" onclick="placeBet(1)">下注 1</button>
+        <button class="button" onclick="placeBet(5)">下注 5</button>
+        <button class="button" onclick="placeBet(10)">下注 10</button>
+        <button class="button" onclick="placeBet(20)">下注 20</button>
+        <button class="button" onclick="placeBet(50)">下注 50</button>
+        <button class="button" onclick="placeBet(100)">下注 100</button>
+        <button class="button" onclick="placeBet(200)">下注 200</button>
+        <button class="button" onclick="placeBet(500)">下注 500</button>
+        <button class="button" onclick="placeBet(1000)">下注 1000</button>
+    </div>
+
+    <div class="game-board">
+        <button class="button" onclick="startGame()">开始游戏</button>
+    </div>
+
+    <script>
+        let gameCoin = parseInt(localStorage.getItem('gameCoin')) || 200;
+        let currentBet = 0;
+
+        document.getElementById('game-coin').textContent = gameCoin;
+
+        // 开始游戏
+        function startGame() {
+            if (gameCoin <= 0) {
+                alert('游戏币已用完，请刷新网页重新开始！');
+                localStorage.removeItem('gameCoin');
+                window.location.reload();
+                return;
+            }
+
+            if (currentBet === 0) {
+                alert('请先选择一个下注金额!');
+                return;
+            }
+
+            // 生成两张手牌，玩家和庄家的
+            let playerHand = [getCard(), getCard()];
+            let dealerHand = [getCard(), getCard()];
+
+            // 玩家和庄家的手牌总和
+            let playerTotal = getHandValue(playerHand);
+            let dealerTotal = getHandValue(dealerHand);
+
+            // 显示手牌
+            console.log('玩家手牌:', playerHand, '总点数:', playerTotal);
+            console.log('庄家手牌:', dealerHand, '总点数:', dealerTotal);
+
+            // 玩家选择是否继续要牌
+            let playerDone = false;
+            while (!playerDone && playerTotal < 21) {
+                let action = prompt(`玩家手牌: ${playerHand.join(', ')} 点数: ${playerTotal}\n选择动作: "h" 要牌, "s" 停牌`);
+                if (action === 'h') {
+                    playerHand.push(getCard());
+                    playerTotal = getHandValue(playerHand);
+                    console.log('玩家手牌:', playerHand, '总点数:', playerTotal);
+                } else if (action === 's') {
+                    playerDone = true;
+                }
+            }
+
+            // 庄家回合
+            while (dealerTotal < 17) {
+                dealerHand.push(getCard());
+                dealerTotal = getHandValue(dealerHand);
+                console.log('庄家手牌:', dealerHand, '总点数:', dealerTotal);
+            }
+
+            // 判断结果
+            let resultMessage = '';
+            if (playerTotal > 21) {
+                resultMessage = '玩家爆掉，庄家胜!';
+                gameCoin -= currentBet;
+            } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                resultMessage = '玩家胜!';
+                gameCoin += currentBet;
+            } else if (playerTotal < dealerTotal) {
+                resultMessage = '庄家胜!';
+                gameCoin -= currentBet;
+            } else {
+                resultMessage = '平局!';
+            }
+
+            // 更新游戏币
+            document.getElementById('game-coin').textContent = gameCoin;
+            document.getElementById('status').textContent = resultMessage;
+
+            // 保存游戏币到localStorage
+            localStorage.setItem('gameCoin', gameCoin);
+
+            // 如果游戏币为零，提示刷新
+            if (gameCoin <= 0) {
+                alert('游戏币已用完，请刷新网页重新开始！');
+                localStorage.removeItem('gameCoin');
+                window.location.reload();
+            }
+        }
+
+        // 选择下注金额
+        function placeBet(amount) {
+            if (amount > gameCoin) {
+                alert('余额不足，无法下注！');
+                return;
+            }
+            currentBet = amount;
+        }
+
+        // 获取一张牌
+        function getCard() {
+            const cards = [
+                { value: 2 }, { value: 3 }, { value: 4 }, { value: 5 }, { value: 6 },
+                { value: 7 }, { value: 8 }, { value: 9 }, { value: 10 }, { value: 10 }, { value: 10 }, { value: 11 }
+            ];
+            return cards[Math.floor(Math.random() * cards.length)];
+        }
+
+        // 计算手牌总点数
+        function getHandValue(hand) {
+            let total = 0;
+            let aceCount = 0;
+
+            for (let card of hand) {
+                total += card.value;
+                if (card.value === 11) {
+                    aceCount++;
+                }
+            }
+
+            // 如果有Ace并且总点数大于21，Ace的值变为1
+            while (total > 21 && aceCount > 0) {
+                total -= 10;
+                aceCount--;
+            }
+
+            return total;
+        }
+    </script>
+</body>
+</html>
