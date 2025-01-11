@@ -105,7 +105,8 @@
                 // 直接扣除金额，因为下注已扣除
             } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                 resultMessage = '玩家胜!';
-                gameCoin += currentBet*2;  // 玩家胜利，返回下注金额
+                gameCoin += currentBet;  
+                gameCoin += currentBet;  // 玩家胜利，返回下注金额
             } else if (playerTotal < dealerTotal) {
                 resultMessage = '庄家胜!';
                 // 下注已扣除，无需再次扣除
