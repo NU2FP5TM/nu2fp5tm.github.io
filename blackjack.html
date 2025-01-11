@@ -12,6 +12,7 @@
         .game-board { margin-top: 20px; }
         .bet-buttons { display: flex; justify-content: center; }
         .bet-buttons button { margin: 5px; }
+        .bet-info { font-size: 18px; color: green; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -33,6 +34,8 @@
         <button class="button" onclick="placeBet(500)">下注 500</button>
         <button class="button" onclick="placeBet(1000)">下注 1000</button>
     </div>
+
+    <div class="bet-info" id="bet-info"></div>
 
     <div class="game-board">
         <button class="button" onclick="startGame()">开始游戏</button>
@@ -58,7 +61,12 @@
                 return;
             }
 
-            // 生成两张手牌，玩家和庄家的
+            // 扣除下注金额并更新页面
+            gameCoin -= currentBet;
+            document.getElementById('game-coin').textContent = gameCoin;
+            document.getElementById('bet-info').textContent = `已下注: ${currentBet} 游戏币`;
+
+            // 游戏开始逻辑
             let playerHand = [getCard(), getCard()];
             let dealerHand = [getCard(), getCard()];
 
@@ -94,13 +102,13 @@
             let resultMessage = '';
             if (playerTotal > 21) {
                 resultMessage = '玩家爆掉，庄家胜!';
-                gameCoin -= currentBet;
+                gameCoin -= currentBet;  // 下注失败，扣除金额
             } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                 resultMessage = '玩家胜!';
-                gameCoin += currentBet;
+                gameCoin += currentBet;  // 玩家胜利，增加金额
             } else if (playerTotal < dealerTotal) {
                 resultMessage = '庄家胜!';
-                gameCoin -= currentBet;
+                gameCoin -= currentBet;  // 庄家胜，扣除金额
             } else {
                 resultMessage = '平局!';
             }
@@ -117,6 +125,10 @@
                 alert('游戏币已用完，请刷新网页重新开始！');
                 localStorage.removeItem('gameCoin');
                 window.location.reload();
+            } else {
+                // 清空下注信息
+                document.getElementById('bet-info').textContent = '';
+                currentBet = 0; // 重置下注
             }
         }
 
@@ -127,6 +139,7 @@
                 return;
             }
             currentBet = amount;
+            document.getElementById('bet-info').textContent = `已下注: ${currentBet} 游戏币`;
         }
 
         // 获取一张牌
