@@ -61,7 +61,7 @@
                 return;
             }
 
-            // 扣除下注金额并更新页面
+            // 下注时扣除金额
             gameCoin -= currentBet;
             document.getElementById('game-coin').textContent = gameCoin;
             document.getElementById('bet-info').textContent = `已下注: ${currentBet} 游戏币`;
@@ -102,15 +102,16 @@
             let resultMessage = '';
             if (playerTotal > 21) {
                 resultMessage = '玩家爆掉，庄家胜!';
-                gameCoin -= currentBet;  // 下注失败，扣除金额
+                // 直接扣除金额，因为下注已扣除
             } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                 resultMessage = '玩家胜!';
-                gameCoin += currentBet;  // 玩家胜利，增加金额
+                gameCoin += currentBet;  // 玩家胜利，返回下注金额
             } else if (playerTotal < dealerTotal) {
                 resultMessage = '庄家胜!';
-                gameCoin -= currentBet;  // 庄家胜，扣除金额
+                // 下注已扣除，无需再次扣除
             } else {
                 resultMessage = '平局!';
+                // 下注已扣除，无需再次扣除
             }
 
             // 更新游戏币
