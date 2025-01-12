@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子社保卡详情</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #3b82f6;
+            color: white;
+            padding: 15px;
+            
+            font-size: 18px;
+        }
+
+        .content {
+            padding: 0 20px 20px 20px;
+        }
+
+        .card {
+            background-color: #e0f2ff;
+            position: relative;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden; /* 防止图片溢出 */
+            height: 150px; /* 固定卡片高度 */
+        }
+
+        .card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;   /* 确保图片拉伸并覆盖整个区域 */
+        }
+
+        .info-group {
+            border-top: 1px solid #e0e0e0;
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-group:first-child {
+            border-top: none;
+        }
+
+        .info-group label {
+            flex: 1;
+            font-size: 14px;
+            color: #666666;
+        }
+
+        .info-group span {
+            flex: 2;
+            font-size: 16px;
+            color: #333333;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    
+        <div class="header">电子社保卡详情</div>
+        <div class="content">
+            <!-- 卡片部分 -->
+            <div class="card">
+                <img src="backgroundtest0.png" alt="背景图片">
+            </div>
+            
+            <!-- 信息部分 -->
+            <div class="info-group">
+                <label>姓名</label>
+                <span>张三</span>
+            </div>
+            <div class="info-group">
+                <label>社会保障号码</label>
+                <span>1234567890</span>
+            </div>
+            <div class="info-group">
+                <label>地区</label>
+                <span>北京市</span>
+            </div>
+            <div class="info-group">
+                <label>社保卡卡号</label>
+                <span>9876543210</span>
+            </div>
+            <div class="info-group">
+                <label>银行卡号</label>
+                <span>6212345678901234</span>
+            </div>
+        </div>
+    
+</body>
+</html>
