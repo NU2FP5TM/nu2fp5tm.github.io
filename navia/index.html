@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>娜维娅详情</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 30px;
+        }
+
+        .header {
+            background-color: #3b82f6;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            padding: 0 20px 20px 20px;
+        }
+
+        .card {
+            background-color: #e0f2ff;
+            position: relative;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 175px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+        }
+
+        .card .text-overlay {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            color: black;
+            font-size: 12px;
+            line-height: 2.2 ;
+        }
+
+        .card .bank-overlay1 {
+            position: absolute;
+            top: 120px;
+            left: 15px;
+        }
+
+        .card .text-overlay1 {
+            position: absolute;
+            width: 300px;
+            left: 24px;
+            color: black;
+            font-size: 12px;
+            margin-top: 1px;
+        }
+
+        /* 新增头像部分 */
+        .card .avatar {
+            position: absolute;
+            margin-top: 35px;
+            top: 20px;
+            right: 15px;
+            width: 65px;
+            height: 80px;
+            overflow: hidden;
+        }
+
+        .card .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+        }
+
+        .info-group-no-border {
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-group-no-border label {
+            flex: 1;
+            font-size: 14px;
+            color: #666666;
+        }
+
+        .info-group-no-border span {
+            flex: 2;
+            font-size: 14px;
+            color: #333333;
+            text-align: right;
+        }
+
+        .info-group {
+            border-top: 1px solid #e0e0e0;
+            padding: 15px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-group:first-child {
+            border-top: none;
+        }
+
+        .info-group label {
+            flex: 1;
+            font-size: 14px;
+            color: #666666;
+        }
+
+        .info-group span {
+            flex: 2;
+            font-size: 14px;
+            color: #333333;
+            text-align: right;
+        }
+
+        /* 新增银行图标样式 */
+        .bank-info img {
+            width: 18px;
+            height: 18px;
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">电子社保卡详情</div>
+    <div class="content">
+        <div class="card">
+            <img src="backgroundsh.png" alt="背景图片">
+            <div class="text-overlay">
+                姓名 娜维娅<br>
+                社会保障号码 319007200108160228<br>
+            </div><br>
+            <div class="bank-overlay1">
+                <div class="bank-info">
+                    <img src="boc.png" alt="银行图标" class="bank-icon">
+                    <div class="text-overlay1">中银枫丹 ************9280</div>
+                </div>
+            </div>
+            <!-- 头像部分 -->
+            <div class="avatar">
+                <img src="avatar.png" alt="头像">
+            </div>
+        </div>
+
+        <!-- 信息部分 -->
+        <div class="info-group-no-border">
+            <label>姓名</label>
+            <span>娜维娅</span>
+        </div>
+        <div class="info-group">
+            <label>社会保障号码</label>
+            <span>319007200108160228</span>
+        </div>
+        <div class="info-group">
+            <label>地区</label>
+            <span>(发卡地) 上海市</span>
+        </div>
+        <div class="info-group">
+            <label>社保卡卡号</label>
+            <span>F92213526</span>
+        </div>
+        <div class="info-group">
+            <label>银行卡号</label>
+            <span>************9280</span>
+        </div>
+    </div>
+
+</body>
+
+</html>
