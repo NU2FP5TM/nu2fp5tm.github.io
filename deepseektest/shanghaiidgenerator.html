@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>上海身份证</title>
+    <style>
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin: 10px 0;
+        }
+
+        #result {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-group">
+            <label>选择辖区：</label>
+            <select id="district">
+                <!-- 当前区划 -->
+                <option value="310101">黄浦区（当前）</option>
+                <option value="310102">南市区（已撤销，2011年并入黄浦区）</option>
+                <option value="310103">卢湾区（已撤销，2011年并入黄浦区）</option>
+                <option value="310104">徐汇区（当前）</option>
+                <option value="310105">长宁区（当前）</option>
+                <option value="310106">静安区（当前）</option>
+                <option value="310107">普陀区（当前）</option>
+                <option value="310108">闸北区（已撤销，2015年并入静安区）</option>
+                <option value="310109">虹口区（当前）</option>
+                <option value="310110">杨浦区（当前）</option>
+                <option value="310112">闵行区（当前）</option>
+                <option value="310113">宝山区（当前）</option>
+                <option value="310114">嘉定区（当前）</option>
+                <option value="310115">浦东新区（当前）</option>
+                <option value="310116">金山区（当前）</option>
+                <option value="310117">松江区（当前）</option>
+                <option value="310118">青浦区（当前）</option>
+                <option value="310120">奉贤区（当前）</option>
+                <option value="310151">崇明区（当前）</option>
+
+                <!-- 老的行政区划代码 -->
+                <option value="310221">上海县（已撤销，1992年并入闵行区）</option>
+                <option value="310222">嘉定县（已撤销，1988年撤县设区）</option>
+                <option value="310223">宝山县（已撤销，1988年撤县设区）</option>
+                <option value="310224">川沙县（已撤销，1992年并入浦东新区）</option>
+                <option value="310225">南汇县（已撤销，2009年并入浦东新区）</option>
+                <option value="310226">奉贤县（已撤销，2001年撤县设区）</option>
+                <option value="310227">松江县（已撤销，1998年撤县设区）</option>
+                <option value="310228">金山县（已撤销，1997年撤县设区）</option>
+                <option value="310229">青浦县（已撤销，1999年撤县设区）</option>
+                <option value="310230">崇明县（已撤销，2016年撤县设区）</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>出生日期：</label>
+            <input type="date" id="birthdate" required>
+        </div>
+
+        <div class="form-group">
+            <label>性别：</label>
+            <label><input type="radio" name="gender" value="1" checked> 男</label>
+            <label><input type="radio" name="gender" value="0"> 女</label>
+        </div>
+
+        <div class="form-group">
+            <label>生成数量：</label>
+            <input type="number" id="count" min="1" max="100" value="5">
+        </div>
+
+        <button onclick="generateID()">生成身份证</button>
+
+        <div class="form-group">
+            <h4>生成结果：</h4>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 校验码计算权重
+        const WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+        const CHECK_CODES = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+        function generateID() {
+            // 获取用户输入
+            const district = document.getElementById('district').value;
+            const birthdate = document.getElementById('birthdate').value.replace(/-/g, '');
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const count = Math.min(100, document.getElementById('count').value);
+
+            // 生成结果
+            let output = [];
+            for (let i = 0; i < count; i++) {
+                // 生成顺序码（3位）
+                const sequence = String(Math.floor(Math.random() * 999)).padStart(3, '0');
+
+                // 调整性别位
+                let genderCode = sequence[2];
+                while (genderCode % 2 !== parseInt(gender)) {
+                    genderCode = Math.floor(Math.random() * 10);
+                }
+
+                // 组合前17位
+                const prefix = district + birthdate + sequence.slice(0, 2) + genderCode;
+
+                // 计算校验码
+                let sum = 0;
+                for (let j = 0; j < 17; j++) {
+                    sum += parseInt(prefix[j]) * WEIGHTS[j];
+                }
+                const checkCode = CHECK_CODES[sum % 11];
+
+                output.push(prefix + checkCode);
+            }
+
+            // 显示结果
+            document.getElementById('result').textContent = output.join('\n');
+        }
+    </script>
+</body>
+
+</html>

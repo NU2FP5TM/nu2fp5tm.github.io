@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>江浙沪身份证</title>
+    <style>
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .form-group { margin: 10px 0; }
+        #result { white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 省份选择 -->
+        <div class="form-group">
+            <label>选择省份：</label>
+            <select id="province" onchange="loadCities()">
+                <option value="">请选择省份</option>
+                <option value="31">上海市</option>
+                <option value="32">江苏省</option>
+                <option value="33">浙江省</option>
+            </select>
+        </div>
+
+        <!-- 地级市选择 -->
+        <div class="form-group">
+            <label>选择地级市：</label>
+            <select id="city" onchange="loadDistricts()" disabled>
+                <option value="">请先选择省份</option>
+            </select>
+        </div>
+
+        <!-- 区县选择 -->
+        <div class="form-group">
+            <label>选择区县：</label>
+            <select id="district" disabled>
+                <option value="">请先选择地级市</option>
+            </select>
+        </div>
+
+        <!-- 其他输入 -->
+        <div class="form-group">
+            <label>出生日期：</label>
+            <input type="date" id="birthdate" required>
+        </div>
+
+        <div class="form-group">
+            <label>性别：</label>
+            <label><input type="radio" name="gender" value="1" checked> 男</label>
+            <label><input type="radio" name="gender" value="0"> 女</label>
+        </div>
+
+        <div class="form-group">
+            <label>生成数量：</label>
+            <input type="number" id="count" min="1" max="100" value="5">
+        </div>
+
+        <button onclick="generateID()">生成身份证</button>
+
+        <div class="form-group">
+            <h4>生成结果：</h4>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 省市区数据
+        const regionData = {
+            "31": { // 上海
+                name: "上海市",
+                cities: {
+                    "3101": { name: "上海市", districts: {
+                        "310101": "黄浦区",
+                        "310104": "徐汇区",
+                        "310105": "长宁区",
+                        "310106": "静安区",
+                        "310107": "普陀区",
+                        "310109": "虹口区",
+                        "310110": "杨浦区",
+                        "310112": "闵行区",
+                        "310113": "宝山区",
+                        "310114": "嘉定区",
+                        "310115": "浦东新区",
+                        "310116": "金山区",
+                        "310117": "松江区",
+                        "310118": "青浦区",
+                        "310120": "奉贤区",
+                        "310151": "崇明区"
+                    }}
+                }
+            },
+            "32": { // 江苏
+                name: "江苏省",
+                cities: {
+                    "3201": { name: "南京市", districts: {
+                        "320102": "玄武区",
+                        "320104": "秦淮区",
+                        "320105": "建邺区",
+                        "320106": "鼓楼区",
+                        "320111": "浦口区",
+                        "320113": "栖霞区",
+                        "320114": "雨花台区",
+                        "320115": "江宁区",
+                        "320116": "六合区",
+                        "320117": "溧水区",
+                        "320118": "高淳区"
+                    }},
+                    "3205": { name: "苏州市", districts: {
+                        "320505": "虎丘区",
+                        "320506": "吴中区",
+                        "320507": "相城区",
+                        "320508": "姑苏区",
+                        "320509": "吴江区",
+                        "320581": "常熟市",
+                        "320582": "张家港市",
+                        "320583": "昆山市",
+                        "320585": "太仓市"
+                    }}
+                    // 其他城市可继续添加
+                }
+            },
+            "33": { // 浙江
+                name: "浙江省",
+                cities: {
+                    "3301": { name: "杭州市", districts: {
+                        "330102": "上城区",
+                        "330103": "下城区",
+                        "330104": "江干区",
+                        "330105": "拱墅区",
+                        "330106": "西湖区",
+                        "330108": "滨江区",
+                        "330109": "萧山区",
+                        "330110": "余杭区",
+                        "330111": "富阳区",
+                        "330112": "临安区"
+                    }},
+                    "3302": { name: "宁波市", districts: {
+                        "330203": "海曙区",
+                        "330205": "江北区",
+                        "330206": "北仑区",
+                        "330211": "镇海区",
+                        "330212": "鄞州区",
+                        "330213": "奉化区",
+                        "330225": "象山县",
+                        "330226": "宁海县",
+                        "330281": "余姚市",
+                        "330282": "慈溪市"
+                    }}
+                    // 其他城市可继续添加
+                }
+            }
+        };
+
+        // 加载地级市
+        function loadCities() {
+            const province = document.getElementById("province").value;
+            const citySelect = document.getElementById("city");
+            citySelect.innerHTML = '<option value="">请选择地级市</option>';
+            citySelect.disabled = !province;
+
+            if (province) {
+                const cities = regionData[province].cities;
+                for (const code in cities) {
+                    const option = document.createElement("option");
+                    option.value = code;
+                    option.textContent = cities[code].name;
+                    citySelect.appendChild(option);
+                }
+                citySelect.disabled = false;
+            }
+            loadDistricts(); // 清空区县
+        }
+
+        // 加载区县
+        function loadDistricts() {
+            const province = document.getElementById("province").value;
+            const city = document.getElementById("city").value;
+            const districtSelect = document.getElementById("district");
+            districtSelect.innerHTML = '<option value="">请选择区县</option>';
+            districtSelect.disabled = !city;
+
+            if (province && city) {
+                const districts = regionData[province].cities[city].districts;
+                for (const code in districts) {
+                    const option = document.createElement("option");
+                    option.value = code;
+                    option.textContent = districts[code];
+                    districtSelect.appendChild(option);
+                }
+                districtSelect.disabled = false;
+            }
+        }
+
+        // 生成身份证
+        function generateID() {
+            const district = document.getElementById("district").value;
+            const birthdate = document.getElementById("birthdate").value.replace(/-/g, '');
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const count = Math.min(100, document.getElementById("count").value);
+
+            if (!district || !birthdate || !count) {
+                alert("请填写完整信息！");
+                return;
+            }
+
+            let output = [];
+            for (let i = 0; i < count; i++) {
+                const sequence = String(Math.floor(Math.random() * 999)).padStart(3, '0');
+                let genderCode = sequence[2];
+                while (genderCode % 2 !== parseInt(gender)) {
+                    genderCode = Math.floor(Math.random() * 10);
+                }
+
+                const prefix = district + birthdate + sequence.slice(0, 2) + genderCode;
+                const checkCode = calculateCheckCode(prefix);
+                output.push(prefix + checkCode);
+            }
+
+            document.getElementById("result").textContent = output.join('\n');
+        }
+
+        // 计算校验码
+        function calculateCheckCode(prefix) {
+            const WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const CHECK_CODES = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += parseInt(prefix[i]) * WEIGHTS[i];
+            }
+            return CHECK_CODES[sum % 11];
+        }
+    </script>
+</body>
+</html>
