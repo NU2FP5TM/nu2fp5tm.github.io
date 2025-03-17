@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>网络掩码转换器</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input {
+            width: 200px;
+            padding: 5px;
+            margin: 5px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+        }
+        .note {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h2>网络掩码转换器</h2>
+    
+    <div class="input-group">
+        <label>前缀长度 (0-32):</label>
+        <input type="number" id="prefix" min="0" max="32" placeholder="例如：24">
+    </div>
+    
+    <div class="input-group">
+        <label>子网掩码:</label>
+        <input type="text" id="netmask" placeholder="例如：255.255.255.0">
+    </div>
+    
+    <div class="input-group">
+        <label>通配符掩码:</label>
+        <input type="text" id="wildcard" placeholder="例如：0.0.0.255">
+    </div>
+
+    <div class="note">任意输入一个值，其他两个会自动转换</div>
+
+    <script>
+        // 获取DOM元素
+        const prefixInput = document.getElementById('prefix');
+        const netmaskInput = document.getElementById('netmask');
+        const wildcardInput = document.getElementById('wildcard');
+
+        // 事件监听
+        prefixInput.addEventListener('input', updateFromPrefix);
+        netmaskInput.addEventListener('input', updateFromNetmask);
+        wildcardInput.addEventListener('input', updateFromWildcard);
+
+        // 从前缀长度转换
+        function updateFromPrefix() {
+            const prefix = parseInt(prefixInput.value);
+            if (prefix >= 0 && prefix <= 32) {
+                const netmask = prefixToNetmask(prefix);
+                const wildcard = netmaskToWildcard(netmask);
+                setValues(prefix, netmask, wildcard);
+            }
+        }
+
+        // 从子网掩码转换
+        function updateFromNetmask() {
+            const netmask = netmaskInput.value;
+            if (validateIPv4(netmask)) {
+                const prefix = netmaskToPrefix(netmask);
+                const wildcard = netmaskToWildcard(netmask);
+                setValues(prefix, netmask, wildcard);
+            }
+        }
+
+        // 从通配符掩码转换
+        function updateFromWildcard() {
+            const wildcard = wildcardInput.value;
+            if (validateIPv4(wildcard)) {
+                const netmask = wildcardToNetmask(wildcard);
+                const prefix = netmaskToPrefix(netmask);
+                setValues(prefix, netmask, wildcard);
+            }
+        }
+
+        // 设置所有值
+        function setValues(prefix, netmask, wildcard) {
+            prefixInput.value = prefix !== null ? prefix : '';
+            netmaskInput.value = netmask;
+            wildcardInput.value = wildcard;
+        }
+
+        // 验证IPv4格式
+        function validateIPv4(ip) {
+            return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/.test(ip);
+        }
+
+        // 前缀转子网掩码
+        function prefixToNetmask(prefix) {
+            let mask = [];
+            for(let i=0; i<4; i++) {
+                let n = Math.min(prefix, 8);
+                mask.push(256 - Math.pow(2, 8 - n));
+                prefix -= n;
+            }
+            return mask.join('.');
+        }
+
+        // 子网掩码转前缀
+        function netmaskToPrefix(netmask) {
+            const octets = netmask.split('.').map(Number);
+            let binary = '';
+            for(let octet of octets) {
+                binary += octet.toString(2).padStart(8, '0');
+            }
+            const prefix = binary.indexOf('0');
+            return prefix === -1 ? 32 : prefix;
+        }
+
+        // 子网掩码转通配符掩码
+        function netmaskToWildcard(netmask) {
+            return netmask.split('.').map(octet => 255 - parseInt(octet)).join('.');
+        }
+
+        // 通配符掩码转子网掩码
+        function wildcardToNetmask(wildcard) {
+            return wildcard.split('.').map(octet => 255 - parseInt(octet)).join('.');
+        }
+    </script>
+</body>
+</html>
