@@ -33,18 +33,15 @@
   
     // 3. 获取地理/IP信息
     let ip = "未知", country = "未知", province = "未知", city = "未知";
-  
     try {
-      const response = await fetch("https://api.bilibili.com/x/web-interface/zone");
-      const data = await response.json();
-      if (data.code === 0) {
-        ip = data.data.addr || "未知";
-        country = data.data.country || "未知";
-        province = data.data.province || "未知";
-        city = data.data.city || "未知";
-      }
-    } catch (err) {
-      console.error("获取地理位置失败:", err);
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        ip = data.ip || "未知";
+        country = data.country_name || "未知";
+        province = data.region || "未知";
+        city = data.city || "未知";
+    } catch (e) {
+        console.error("获取 IP 信息失败：", e);
     }
   
     // 4. 获取浏览器信息
