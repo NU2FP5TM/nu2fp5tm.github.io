@@ -26,10 +26,7 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   
-    // 2. 绘制初始文字
-    ctx.fillStyle = "red";
-    ctx.font = "16px Microsoft YaHei";
-    ctx.fillText("测试文字", 10, 20);
+    
   
     // 3. 获取地理/IP信息
     let ip = "未知", country = "未知", province = "未知", city = "未知";
@@ -57,7 +54,7 @@
   
     // 6. 绘制信息文本
     ctx.fillStyle = "#000";
-    ctx.font = "14px Microsoft YaHei";
+    ctx.font = "14px ";
     ctx.fillText(`欢迎您来自 ${country}-${province}-${city} 的朋友`, 10, 50);
     ctx.fillText(dateStr, 10, 80);
     ctx.fillText(`您的IP是: ${ip}`, 10, 110);
