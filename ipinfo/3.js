@@ -67,7 +67,7 @@ async function generateImage() {
     const dateStr = `今天是 ${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日 星期${weekArray[today.getDay()]}`;
 
     // 设置字体样式
-    ctx.fillStyle = "39c5bb";
+    ctx.fillStyle = "#39c5bb";
     ctx.font = "14px 'Kosefont-JP'"; // 使用自定义字体
 
     // 绘制文本
