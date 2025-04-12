@@ -53,8 +53,8 @@
     const dateStr = `今天是 ${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日 星期${weekArray[today.getDay()]}`;
   
     // 6. 绘制信息文本
-    ctx.fillStyle = "#000";
-    ctx.font = "14px ";
+    ctx.fillStyle = "#39c5bb";
+    ctx.font = "14px Kosefont-JP.ttf";
     ctx.fillText(`欢迎您来自 ${country}-${province}-${city} 的朋友`, 10, 50);
     ctx.fillText(dateStr, 10, 80);
     ctx.fillText(`您的IP是: ${ip}`, 10, 110);
