@@ -68,7 +68,7 @@ async function generateImage() {
 
     // 设置字体样式
     ctx.fillStyle = "#39c5bb";
-    ctx.font = "14px 'Kosefont-JP'"; // 使用自定义字体
+    ctx.font = "14px "; // 使用自定义字体
 
     // 绘制文本
     ctx.fillText(`欢迎您来自 ${country}-${province}-${city} 的朋友`, 10, 25);
@@ -89,8 +89,5 @@ async function generateImage() {
     const dataURL = canvas.toDataURL("image/jpeg");
     console.log("图片生成成功:", dataURL);
 }
+generateImage();
 
-// 等字体加载完再执行
-document.fonts.ready.then(() => {
-    generateImage();
-});
