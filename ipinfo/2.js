@@ -1,0 +1,84 @@
+(async function generateImage() {
+    const canvas = document.getElementById("outputCanvas");
+    const ctx = canvas.getContext("2d");
+  
+    // 1. 背景图处理
+    const bgImage = new Image();
+    bgImage.crossOrigin = "Anonymous"; // 处理跨域
+  
+    let bgLoaded = false;
+    await new Promise((resolve) => {
+      bgImage.onload = () => {
+        bgLoaded = true;
+        resolve();
+      };
+      bgImage.onerror = () => {
+        console.warn("⚠ 背景图加载失败，将使用默认背景");
+        resolve();
+      };
+      bgImage.src = "xhxh.jpg"; // 确保路径正确
+    });
+  
+    if (bgLoaded) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = "#f0f0f0";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  
+    // 2. 绘制初始文字
+    ctx.fillStyle = "red";
+    ctx.font = "16px Microsoft YaHei";
+    ctx.fillText("测试文字", 10, 20);
+  
+    // 3. 获取地理/IP信息
+    let ip = "未知", country = "未知", province = "未知", city = "未知";
+  
+    try {
+      const response = await fetch("https://api.bilibili.com/x/web-interface/zone");
+      const data = await response.json();
+      if (data.code === 0) {
+        ip = data.data.addr || "未知";
+        country = data.data.country || "未知";
+        province = data.data.province || "未知";
+        city = data.data.city || "未知";
+      }
+    } catch (err) {
+      console.error("获取地理位置失败:", err);
+    }
+  
+    // 4. 获取浏览器信息
+    const parser = new UAParser();
+    const uaResult = parser.getResult();
+    const os = uaResult.os.name || "未知";
+    const browser = `${uaResult.browser.name || "未知"} ${uaResult.browser.version || ""}`;
+  
+    // 5. 当前日期
+    const weekArray = ["日","一","二","三","四","五","六"];
+    const today = new Date();
+    const dateStr = `今天是 ${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日 星期${weekArray[today.getDay()]}`;
+  
+    // 6. 绘制信息文本
+    ctx.fillStyle = "#000";
+    ctx.font = "14px Microsoft YaHei";
+    ctx.fillText(`欢迎您来自 ${country}-${province}-${city} 的朋友`, 10, 50);
+    ctx.fillText(dateStr, 10, 80);
+    ctx.fillText(`您的IP是: ${ip}`, 10, 110);
+    ctx.fillText(`操作系统: ${os}`, 10, 140);
+    ctx.fillText(`浏览器: ${browser}`, 10, 170);
+  
+    // 7. 解码 GET 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const param = urlParams.get("s");
+    if (param) {
+      const decoded = atob(param.replace(/ /g, "+"));
+      ctx.fillStyle = "#333";
+      ctx.font = "13px Microsoft YaHei";
+      ctx.fillText(decoded, 10, 200);
+    }
+  
+    // 8. 导出为 dataURL
+    const dataURL = canvas.toDataURL("image/jpeg");
+    console.log("🎉 图片生成成功:", dataURL);
+  })();
+  
