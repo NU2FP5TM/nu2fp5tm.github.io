@@ -1,8 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=GB2312">
-  <title>Ğ£ÑéÂë¼ÆËãÆ÷</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>æ ¡éªŒç è®¡ç®—å™¨</title>
   <style>
     body { font-family: sans-serif; padding: 10px; }
     label { display: inline-block; width: 220px; }
@@ -12,23 +12,23 @@
   </style>
 </head>
 <body>
-  <h3>Éí·İÖ¤/Í³Ò»Éç»áĞÅÓÃ´úÂë/×éÖ¯»ú¹¹´úÂëĞ£ÑéÂë²¹È«</h3>
+  <h3>èº«ä»½è¯/ç»Ÿä¸€ç¤¾ä¼šä¿¡ç”¨ä»£ç /ç»„ç»‡æœºæ„ä»£ç æ ¡éªŒç è¡¥å…¨</h3>
   <form id="frm" onsubmit="return false;">
-    <label>Ñ¡ÔñÀàĞÍ£º</label>
+    <label>é€‰æ‹©ç±»å‹ï¼š</label>
     <select id="type">
-      <option value="id">¾ÓÃñÉí·İÖ¤£¨ÊäÈëÇ°17Î»Êı×Ö£©</option>
-      <option value="uscc">Í³Ò»Éç»áĞÅÓÃ´úÂë£¨ÊäÈëÇ°17Î»£¬0-9/A-Z£©</option>
-      <option value="org">×éÖ¯»ú¹¹´úÂë£¨ÊäÈëÇ°8Î»£¬0-9/A-Z£©</option>
+      <option value="id">å±…æ°‘èº«ä»½è¯ï¼ˆè¾“å…¥å‰17ä½æ•°å­—ï¼‰</option>
+      <option value="uscc">ç»Ÿä¸€ç¤¾ä¼šä¿¡ç”¨ä»£ç ï¼ˆè¾“å…¥å‰17ä½ï¼Œ0-9/A-Zï¼‰</option>
+      <option value="org">ç»„ç»‡æœºæ„ä»£ç ï¼ˆè¾“å…¥å‰8ä½ï¼Œ0-9/A-Zï¼‰</option>
     </select>
     <br><br>
-    <label>ÇëÊäÈëÇ°17Î»/8Î»£º</label>
+    <label>è¯·è¾“å…¥å‰17ä½/8ä½ï¼š</label>
     <input type="text" id="input" maxlength="17" />
-    <button id="calc">¼ÆËã²¢²¹È«</button>
+    <button id="calc">è®¡ç®—å¹¶è¡¥å…¨</button>
     <br>
   </form>
   <div class="result" id="output" style="display:none"></div>
   <br>
-  <button id="copyBtn" style="display:none">¸´ÖÆ½á¹ûµ½¼ôÌù°å</button>
+  <button id="copyBtn" style="display:none">å¤åˆ¶ç»“æœåˆ°å‰ªè´´æ¿</button>
   <script type="text/javascript">
     function trim(s) { return s.replace(/^\\s+|\\s+$/g,''); }
 
@@ -38,7 +38,7 @@
       var sum = 0;
       for(var i = 0; i < 17; i++) {
         var c = code17.charAt(i);
-        if(c < '0' || c > '9') return {ok:false, msg:'Éí·İÖ¤Ç°17Î»±ØĞëÊÇÊı×Ö'};
+        if(c < '0' || c > '9') return {ok:false, msg:'èº«ä»½è¯å‰17ä½å¿…é¡»æ˜¯æ•°å­—'};
         sum += parseInt(c, 10) * weights[i];
       }
       var r = sum % 11;
@@ -47,14 +47,14 @@
     }
 
     function calcUSCC(code17) {
-      var charset = '0123456789ABCDEFGHJKLMNPQRTUWXY'; // ×Ö·û±í
+      var charset = '0123456789ABCDEFGHJKLMNPQRTUWXY'; // å­—ç¬¦è¡¨
       var weights = [1,3,9,27,19,26,16,17,20,29,25,13,8,24,10,30,28];
       var sum = 0;
       var up = code17.toUpperCase();
       for(var i = 0; i < 17; i++) {
         var ch = up.charAt(i);
         var val = charset.indexOf(ch);
-        if(val === -1) return {ok:false, msg:'Í³Ò»Éç»áĞÅÓÃ´úÂëÇ°17Î»Ö»ÄÜÊ¹ÓÃ 0-9 ºÍ´óĞ´Ó¢ÎÄ×ÖÄ¸£¨²»º¬ I,O,Z,S,V£©'};
+        if(val === -1) return {ok:false, msg:'ç»Ÿä¸€ç¤¾ä¼šä¿¡ç”¨ä»£ç å‰17ä½åªèƒ½ä½¿ç”¨ 0-9 å’Œå¤§å†™è‹±æ–‡å­—æ¯ï¼ˆä¸å« I,O,Z,S,Vï¼‰'};
         sum += val * weights[i];
       }
       var c = 31 - (sum % 31);
@@ -71,7 +71,7 @@
       for(var i = 0; i < 8; i++) {
         var ch = up.charAt(i);
         var val = table.indexOf(ch);
-        if(val === -1) return {ok:false, msg:'×éÖ¯»ú¹¹´úÂëÇ°8Î»Ö»ÄÜÎªÊı×Ö»òÓ¢ÎÄ×ÖÄ¸'};
+        if(val === -1) return {ok:false, msg:'ç»„ç»‡æœºæ„ä»£ç å‰8ä½åªèƒ½ä¸ºæ•°å­—æˆ–è‹±æ–‡å­—æ¯'};
         sum += val * weights[i];
       }
       var c = 11 - (sum % 11);
@@ -87,13 +87,13 @@
       var copyBtn = document.getElementById('copyBtn');
       if(!obj.ok) {
         out.style.display = 'block';
-        out.innerHTML = '<b style="color:red">´íÎó£º</b>' + obj.msg;
+        out.innerHTML = '<b style="color:red">é”™è¯¯ï¼š</b>' + obj.msg;
         copyBtn.style.display = 'none';
         return;
       }
       out.style.display = 'block';
-      out.innerHTML = '<b>²¹È«ºóµÄ½á¹û£º</b><br/><input type="text" id="finalBox" value="' + obj.full + '" style="width:400px" readonly />\n' +
-                     '<div style="margin-top:6px">Ğ£ÑéÎ»: <b>' + obj.check + '</b></div>';
+      out.innerHTML = '<b>è¡¥å…¨åçš„ç»“æœï¼š</b><br/><input type="text" id="finalBox" value="' + obj.full + '" style="width:400px" readonly />\n' +
+                     '<div style="margin-top:6px">æ ¡éªŒä½: <b>' + obj.check + '</b></div>';
       copyBtn.style.display = 'inline-block';
     }
 
@@ -102,36 +102,36 @@
       var input = trim(document.getElementById('input').value);
       if(t === 'id') {
         if(input.length !== 17) {
-          showResult({ok:false, msg: 'Éí·İÖ¤Çë×¼È·ÊäÈëÇ°17Î»Êı×Ö£¨µ±Ç°³¤¶È:' + input.length + '£©'});
+          showResult({ok:false, msg: 'èº«ä»½è¯è¯·å‡†ç¡®è¾“å…¥å‰17ä½æ•°å­—ï¼ˆå½“å‰é•¿åº¦:' + input.length + 'ï¼‰'});
           return;
         }
         showResult(calcID(input));
       } else if(t === 'uscc') {
         if(input.length !== 17) {
-          showResult({ok:false, msg: 'Í³Ò»Éç»áĞÅÓÃ´úÂëÇë×¼È·ÊäÈëÇ°17Î»£¨µ±Ç°³¤¶È:' + input.length + '£©'});
+          showResult({ok:false, msg: 'ç»Ÿä¸€ç¤¾ä¼šä¿¡ç”¨ä»£ç è¯·å‡†ç¡®è¾“å…¥å‰17ä½ï¼ˆå½“å‰é•¿åº¦:' + input.length + 'ï¼‰'});
           return;
         }
         showResult(calcUSCC(input));
       } else if(t === 'org') {
         if(input.length !== 8) {
-          showResult({ok:false, msg: '×éÖ¯»ú¹¹´úÂëÇë×¼È·ÊäÈëÇ°8Î»£¨µ±Ç°³¤¶È:' + input.length + '£©'});
+          showResult({ok:false, msg: 'ç»„ç»‡æœºæ„ä»£ç è¯·å‡†ç¡®è¾“å…¥å‰8ä½ï¼ˆå½“å‰é•¿åº¦:' + input.length + 'ï¼‰'});
           return;
         }
         showResult(calcOrg(input));
       }
     };
 
-    // ¼àÌı»Ø³µ¼ü´¥·¢°´Å¥µã»÷£¨¼æÈİIE4£©
+    // ç›‘å¬å›è½¦é”®è§¦å‘æŒ‰é’®ç‚¹å‡»ï¼ˆå…¼å®¹IE4ï¼‰
     if (document.getElementById('input').attachEvent) {
       document.getElementById('input').attachEvent('onkeydown', function(event) {
-        if (event.keyCode === 13) {  // »Ø³µ¼üµÄ keyCode ÊÇ 13
-          document.getElementById('calc').click();  // Ä£Äâµã»÷¼ÆËã°´Å¥
+        if (event.keyCode === 13) {  // å›è½¦é”®çš„ keyCode æ˜¯ 13
+          document.getElementById('calc').click();  // æ¨¡æ‹Ÿç‚¹å‡»è®¡ç®—æŒ‰é’®
         }
       });
     } else {
       document.getElementById('input').onkeydown = function(event) {
         if (event.keyCode === 13) {
-          document.getElementById('calc').click();  // Ä£Äâµã»÷¼ÆËã°´Å¥
+          document.getElementById('calc').click();  // æ¨¡æ‹Ÿç‚¹å‡»è®¡ç®—æŒ‰é’®
         }
       };
     }
@@ -140,8 +140,9 @@
       var finalBox = document.getElementById('finalBox');
       finalBox.select();
       document.execCommand('copy');
-      alert('½á¹ûÒÑ¸´ÖÆµ½¼ôÌù°å');
+      alert('ç»“æœå·²å¤åˆ¶åˆ°å‰ªè´´æ¿');
     };
   </script>
 </body>
 </html>
+
