@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+  <title>校验码计算器</title>
+  <style>
+    body { font-family: sans-serif; padding: 10px; }
+    label { display: inline-block; width: 220px; }
+    input[type=text] { width: 300px; }
+    button { margin-left: 6px; }
+    .result { margin-top: 12px; padding: 8px; border: 1px solid #ccc; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h3>身份证/统一社会信用代码/组织机构代码校验码补全</h3>
+  <form id="frm" onsubmit="return false;">
+    <label>选择类型：</label>
+    <select id="type">
+      <option value="id">居民身份证（输入前17位数字）</option>
+      <option value="uscc">统一社会信用代码（输入前17位，0-9/A-Z）</option>
+      <option value="org">组织机构代码（输入前8位，0-9/A-Z）</option>
+    </select>
+    <br><br>
+    <label>请输入前17位/8位：</label>
+    <input type="text" id="input" maxlength="17" />
+    <button id="calc">计算并补全</button>
+    <br>
+  </form>
+  <div class="result" id="output" style="display:none"></div>
+  <br>
+  <button id="copyBtn" style="display:none">复制结果到剪贴板</button>
+  <script type="text/javascript">
+    function trim(s) { return s.replace(/^\\s+|\\s+$/g,''); }
+
+    function calcID(code17) {
+      var weights = [7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2];
+      var map = ['1','0','X','9','8','7','6','5','4','3','2'];
+      var sum = 0;
+      for(var i = 0; i < 17; i++) {
+        var c = code17.charAt(i);
+        if(c < '0' || c > '9') return {ok:false, msg:'身份证前17位必须是数字'};
+        sum += parseInt(c, 10) * weights[i];
+      }
+      var r = sum % 11;
+      var check = map[r];
+      return {ok:true, full: code17 + check, check: check};
+    }
+
+    function calcUSCC(code17) {
+      var charset = '0123456789ABCDEFGHJKLMNPQRTUWXY'; // 字符表
+      var weights = [1,3,9,27,19,26,16,17,20,29,25,13,8,24,10,30,28];
+      var sum = 0;
+      var up = code17.toUpperCase();
+      for(var i = 0; i < 17; i++) {
+        var ch = up.charAt(i);
+        var val = charset.indexOf(ch);
+        if(val === -1) return {ok:false, msg:'统一社会信用代码前17位只能使用 0-9 和大写英文字母（不含 I,O,Z,S,V）'};
+        sum += val * weights[i];
+      }
+      var c = 31 - (sum % 31);
+      if(c === 31) c = 0;
+      var check = charset.charAt(c % 31);
+      return {ok:true, full: code17.toUpperCase() + check, check: check};
+    }
+
+    function calcOrg(code8) {
+      var table = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var weights = [3,7,9,10,5,8,4,2];
+      var up = code8.toUpperCase();
+      var sum = 0;
+      for(var i = 0; i < 8; i++) {
+        var ch = up.charAt(i);
+        var val = table.indexOf(ch);
+        if(val === -1) return {ok:false, msg:'组织机构代码前8位只能为数字或英文字母'};
+        sum += val * weights[i];
+      }
+      var c = 11 - (sum % 11);
+      var check;
+      if(c === 11) check = '0';
+      else if(c === 10) check = 'X';
+      else check = String(c);
+      return {ok:true, full: up + check, check: check};
+    }
+
+    function showResult(obj) {
+      var out = document.getElementById('output');
+      var copyBtn = document.getElementById('copyBtn');
+      if(!obj.ok) {
+        out.style.display = 'block';
+        out.innerHTML = '<b style="color:red">错误：</b>' + obj.msg;
+        copyBtn.style.display = 'none';
+        return;
+      }
+      out.style.display = 'block';
+      out.innerHTML = '<b>补全后的结果：</b><br/><input type="text" id="finalBox" value="' + obj.full + '" style="width:400px" readonly />\n' +
+                     '<div style="margin-top:6px">校验位: <b>' + obj.check + '</b></div>';
+      copyBtn.style.display = 'inline-block';
+    }
+
+    document.getElementById('calc').onclick = function() {
+      var t = document.getElementById('type').value;
+      var input = trim(document.getElementById('input').value);
+      if(t === 'id') {
+        if(input.length !== 17) {
+          showResult({ok:false, msg: '身份证请准确输入前17位数字（当前长度:' + input.length + '）'});
+          return;
+        }
+        showResult(calcID(input));
+      } else if(t === 'uscc') {
+        if(input.length !== 17) {
+          showResult({ok:false, msg: '统一社会信用代码请准确输入前17位（当前长度:' + input.length + '）'});
+          return;
+        }
+        showResult(calcUSCC(input));
+      } else if(t === 'org') {
+        if(input.length !== 8) {
+          showResult({ok:false, msg: '组织机构代码请准确输入前8位（当前长度:' + input.length + '）'});
+          return;
+        }
+        showResult(calcOrg(input));
+      }
+    };
+
+    // 监听回车键触发按钮点击（兼容IE4）
+    if (document.getElementById('input').attachEvent) {
+      document.getElementById('input').attachEvent('onkeydown', function(event) {
+        if (event.keyCode === 13) {  // 回车键的 keyCode 是 13
+          document.getElementById('calc').click();  // 模拟点击计算按钮
+        }
+      });
+    } else {
+      document.getElementById('input').onkeydown = function(event) {
+        if (event.keyCode === 13) {
+          document.getElementById('calc').click();  // 模拟点击计算按钮
+        }
+      };
+    }
+
+    document.getElementById('copyBtn').onclick = function() {
+      var finalBox = document.getElementById('finalBox');
+      finalBox.select();
+      document.execCommand('copy');
+      alert('结果已复制到剪贴板');
+    };
+  </script>
+</body>
+</html>
