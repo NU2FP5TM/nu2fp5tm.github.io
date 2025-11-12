@@ -28,8 +28,8 @@
       <h1>前缀专用 — Luhn 校验码生成器（演示）</h1>
       <p class="lead">输入卡号前缀（仅数字），本工具会：<strong>推测可能的总长度（含银联 62）</strong>，并为所选总长度生成 Luhn 校验位。仅用于界面/测试演示，不得用于真实支付。</p>
 
-      <label>前缀（数字，仅演示，勿使用真实 BIN）
-        <input id="prefix" inputmode="numeric" pattern="\d*" placeholder="示例：900000 或 62" value="900000" />
+      <label>前缀或BIN
+        <input id="prefix" inputmode="numeric" pattern="\d*" placeholder="示例：或 62" value="" />
       </label>
 
       <label>检测到的可能总长度（可手动选择）
@@ -47,7 +47,7 @@
       </div>
 
       <div class="note" id="note">
-        推荐使用虚构前缀：<code>000000</code>、<code>900000</code> 等，避免使用真实 BIN（如以 <code>4</code> 开头的 Visa、<code>34/37</code> 的 Amex、<code>51-55</code> 的 Mastercard 等）。
+        test
       </div>
 
       <div id="out" class="result" style="display:none">
@@ -58,7 +58,7 @@
       <div id="warn" class="note danger" style="display:none;margin-top:12px"></div>
 
       <hr style="margin-top:18px" />
-      <p class="small">技术说明：本工具只实现 Luhn 校验位的计算；不包含任何能用于生成真实 CVV 或伪造可用于支付的卡号的逻辑。请在合规环境中处理真实卡片数据。</p>
+      <p class="small">技术说明：本工具只实现 Luhn 校验位的计算；不包含任何能用于生成真实 CVV 或伪造可用于支付的卡号的逻辑。</p>
     </div>
   </div>
 
