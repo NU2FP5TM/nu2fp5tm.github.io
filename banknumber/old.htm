@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Luhn 校验码生成器 (IE4版)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+body { font-family: Arial, "宋体"; background-color: #F7FAFC; margin: 20px; }
+.card { background-color: #FFFFFF; border: 1px solid #CCCCCC; padding: 10px; }
+h1 { font-size: 16pt; margin-bottom: 4px; }
+label { display: block; margin-top: 8px; }
+textarea { width: 100%; height: 120px; }
+input, select, button { font-size: 12pt; margin-top: 4px; }
+.note { background: #FFFBE6; border: 1px solid #FFD; padding: 6px; margin-top: 8px; }
+pre { background: #EEE; padding: 6px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Luhn 校验码生成器（IE4演示版）</h1>
+<p>输入卡号前缀（仅数字），选择长度，然后生成示例号码。</p>
+
+<label>前缀：
+<input type="text" id="prefix">
+</label>
+
+<label>选择长度：
+<select id="lengthSelector">
+<option value="16">16 位</option>
+</select>
+</label>
+
+<label>生成数量：
+<input type="text" id="count" value="5">
+</label>
+
+<br>
+<input type="button" value="生成示例" onclick="computeAndShow(false)">
+<input type="button" value="只显示校验位" onclick="computeAndShow(true)">
+<input type="button" value="清空" onclick="clearOut()">
+
+<div id="out" style="margin-top:10px; display:none;">
+<pre id="details"></pre>
+</div>
+
+<div class="note">
+仅演示 Luhn 校验算法。不会生成任何可用于支付的真实卡号。
+</div>
+</div>
+
+<script language="javascript">
+// --- 兼容旧浏览器的函数们 ---
+
+function guessLengthsByPrefix(p) {
+  var s = "";
+  for (var i=0; i<p.length; i++) {
+    var c = p.charAt(i);
+    if (c >= '0' && c <= '9') s += c;
+  }
+  if (s.length == 0) return [16];
+  if (s.substring(0,2) == "62" || s.substring(0,2) == "95") return [16,18,19];
+  if (s.charAt(0) == "4") return [16,13,19];
+  if (s.charAt(0) == "3") return [15];
+  return [16];
+}
+
+function randomDigits(n){
+  var s="";
+  for (var i=0;i<n;i++) s += Math.floor(Math.random()*10);
+  return s;
+}
+
+function luhnComputeCheckDigit(num){
+  var s = "";
+  for (var i=0;i<num.length;i++){
+    var c = num.charAt(i);
+    if (c>='0' && c<='9') s+=c;
+  }
+  var sum = 0;
+  var len = s.length;
+  for (var i=0;i<len;i++){
+    var d = parseInt(s.charAt(len-1-i));
+    if (((i+1)%2)==1){
+      d=d*2;
+      if (d>9) d=d-9;
+    }
+    sum+=d;
+  }
+  return (10 - (sum%10))%10;
+}
+
+function populateLengths() {
+  var prefix = document.all["prefix"].value;
+  var sel = document.all["lengthSelector"];
+  var lens = guessLengthsByPrefix(prefix);
+  sel.options.length = 0;
+  for (var i=0;i<lens.length;i++){
+    var o = document.createElement("OPTION");
+    o.value = lens[i];
+    o.text = lens[i]+" 位";
+    sel.add(o);
+  }
+}
+
+document.all["prefix"].onkeyup = populateLengths;
+
+function computeAndShow(onlyCheck){
+  var prefix = document.all["prefix"].value;
+  var totalLen = parseInt(document.all["lengthSelector"].value);
+  var count = parseInt(document.all["count"].value);
+  if (isNaN(count) || count < 1) count = 1;
+  if (count > 100) count = 100;
+
+  var details = "";
+  for (var i=0;i<count;i++){
+    var accLen = totalLen - prefix.length - 1;
+    if (accLen < 0) { details = "前缀过长。"; break; }
+    var account = randomDigits(accLen);
+    var without = prefix + account;
+    var check = luhnComputeCheckDigit(without);
+    if (onlyCheck)
+      details += "示例 " + (i+1) + ": 校验位 = " + check + "\r\n";
+    else
+      details += "示例 " + (i+1) + ": " + without + check + " （校验位：" + check + "）\r\n";
+  }
+
+  document.all["details"].innerText = details;
+  document.all["out"].style.display = "";
+}
+
+function clearOut(){
+  document.all["out"].style.display = "none";
+  document.all["details"].innerText = "";
+}
+</script>
+</body>
+</html>
