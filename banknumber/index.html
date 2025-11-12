@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>前缀专用 — Luhn 校验码生成器（仅用于演示）</title>
+  <style>
+    :root{--bg:#f7fafc;--card:#fff;--muted:#6b7280}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei";background:var(--bg);padding:28px}
+    .wrap{max-width:780px;margin:0 auto}
+    .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+    h1{font-size:20px;margin:0 0 8px}
+    p.lead{margin:0;color:var(--muted)}
+    label{display:block;margin-top:12px;font-size:13px}
+    input, select, button{padding:10px 12px;margin-top:6px;font-size:14px;border-radius:8px;border:1px solid #e6eef7;outline:none}
+    .row{display:flex;gap:12px}
+    .small{font-size:13px;color:var(--muted)}
+    .result{margin-top:16px;padding:14px;border-radius:8px;background:#f1f5f9;border:1px solid #e6eef7}
+    pre{background:#0b1220;color:#c8e1ff;padding:12px;border-radius:8px;overflow:auto}
+    .note{margin-top:12px;padding:10px;border-radius:8px;background:#fffbe6;border:1px solid #fff1b8}
+    .danger{background:#fff0f0;border:1px solid #ffd6d6}
+    .actions{margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>前缀专用 — Luhn 校验码生成器（演示）</h1>
+      <p class="lead">输入卡号前缀（仅数字），本工具会：<strong>推测可能的总长度（含银联 62）</strong>，并为所选总长度生成 Luhn 校验位。仅用于界面/测试演示，不得用于真实支付。</p>
+
+      <label>前缀（数字，仅演示，勿使用真实 BIN）
+        <input id="prefix" inputmode="numeric" pattern="\d*" placeholder="示例：900000 或 62" value="900000" />
+      </label>
+
+      <label>检测到的可能总长度（可手动选择）
+        <select id="lengthSelector"></select>
+      </label>
+
+      <label>生成数量（用于展示完整号码；注意：校验位仅一位）
+        <input id="count" type="number" min="1" max="100" value="5" />
+      </label>
+
+      <div class="actions">
+        <button id="compute">生成校验码与示例卡号</button>
+        <button id="onlyCheck">只显示校验位（不生成完整号）</button>
+        <button id="clear">清除结果</button>
+      </div>
+
+      <div class="note" id="note">
+        推荐使用虚构前缀：<code>000000</code>、<code>900000</code> 等，避免使用真实 BIN（如以 <code>4</code> 开头的 Visa、<code>34/37</code> 的 Amex、<code>51-55</code> 的 Mastercard 等）。
+      </div>
+
+      <div id="out" class="result" style="display:none">
+        <div id="summary" class="small"></div>
+        <div id="details"></div>
+      </div>
+
+      <div id="warn" class="note danger" style="display:none;margin-top:12px"></div>
+
+      <hr style="margin-top:18px" />
+      <p class="small">技术说明：本工具只实现 Luhn 校验位的计算；不包含任何能用于生成真实 CVV 或伪造可用于支付的卡号的逻辑。请在合规环境中处理真实卡片数据。</p>
+    </div>
+  </div>
+
+  <script>
+    // 扩展的长度猜测（加入银联 62：16/18/19）
+    function guessLengthsByPrefix(prefix){
+      const p = prefix.replace(/\D/g,'');
+      if (p.length === 0) return [16];
+      // Amex
+      if (/^3[47]/.test(p)) return [15];
+      // Diners
+      if (/^(30[0-5]|36|38)/.test(p)) return [14];
+      // Visa
+      if (/^4/.test(p)) return [16,13,19];
+      // Mastercard
+      if (/^(5[1-5]|22[2-9]|2[3-6]|27[0-1]|2720)/.test(p)) return [16];
+      // Discover
+      if (/^(6011|65|64[4-9])/.test(p)) return [16];
+      // JCB
+      if (/^35(2[89]|[3-8]\d)/.test(p)) return [16];
+      // China UnionPay 常见以 62 开头 -> 16,18,19
+      if (/^62/.test(p)) return [16,18,19];
+      return [16];
+    }
+
+    // Luhn 计算校验位
+    function luhnComputeCheckDigit(digitsWithoutCheck){
+      const s = digitsWithoutCheck.replace(/\D/g,'');
+      const totalLen = s.length + 1;
+      let sum = 0;
+      for (let i = 0; i < s.length; i++){
+        const d = parseInt(s[s.length - 1 - i], 10);
+        const posFromRight = i + 2; // 校验位为位置1
+        let val = d;
+        if (posFromRight % 2 === 0){
+          val = d * 2;
+          if (val > 9) val -= 9;
+        }
+        sum += val;
+      }
+      return (10 - (sum % 10)) % 10;
+    }
+
+    function randomDigits(n){
+      let s = '';
+      for (let i = 0; i < n; i++) s += Math.floor(Math.random()*10);
+      return s;
+    }
+
+    function populateLengths(){
+      const prefix = document.getElementById('prefix').value.trim();
+      const sel = document.getElementById('lengthSelector');
+      sel.innerHTML = '';
+      const lens = guessLengthsByPrefix(prefix);
+      for (const l of lens){
+        const opt = document.createElement('option');
+        opt.value = l; opt.textContent = l + ' 位';
+        sel.appendChild(opt);
+      }
+    }
+
+    document.getElementById('prefix').addEventListener('input', ()=>{
+      populateLengths();
+      document.getElementById('warn').style.display = 'none';
+    });
+
+    
+    function computeAndShow(onlyCheck=false){
+      const prefix = document.getElementById('prefix').value.trim();
+      if (!/^[0-9]*$/.test(prefix)){
+        alert('前缀只能包含数字'); return;
+      }
+      
+      const sel = document.getElementById('lengthSelector');
+      const totalLen = parseInt(sel.value, 10);
+      const count = Math.max(1, Math.min(100, parseInt(document.getElementById('count').value || '1',10)));
+
+      const out = document.getElementById('out');
+      out.style.display = 'block';
+      const summary = document.getElementById('summary');
+      summary.textContent = `前缀：${prefix || '(空)'} — 选定总长度：${totalLen} 位 — 生成数量：${count}`;
+
+      const details = document.getElementById('details');
+      details.innerHTML = '';
+
+      for (let i=0;i<count;i++){
+        // 生成占位账号段（不含校验位）
+        const p = prefix.replace(/\D/g,'');
+        const accLen = totalLen - p.length - 1;
+        if (accLen < 0){ details.textContent = '错误：前缀长度超过或等于目标总长度。'; return; }
+        const account = randomDigits(accLen);
+        const withoutCheck = p + account;
+        const check = luhnComputeCheckDigit(withoutCheck);
+        if (onlyCheck){
+          const pre = document.createElement('pre');
+          pre.textContent = `补全位置（示例 ${i+1}）：校验位 = ${check}`;
+          details.appendChild(pre);
+        } else {
+          const full = withoutCheck + String(check);
+          const pre = document.createElement('pre');
+          pre.textContent = `示例 ${i+1}: ${full}  （校验位：${check}）`;
+          details.appendChild(pre);
+        }
+      }
+    }
+
+    document.getElementById('compute').addEventListener('click', ()=>computeAndShow(false));
+    document.getElementById('onlyCheck').addEventListener('click', ()=>computeAndShow(true));
+    document.getElementById('clear').addEventListener('click', ()=>{
+      document.getElementById('out').style.display = 'none';
+      document.getElementById('details').innerHTML = '';
+      document.getElementById('warn').style.display = 'none';
+    });
+
+    // 初始化
+    populateLengths();
+  </script>
+</body>
+</html>
