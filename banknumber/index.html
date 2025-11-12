@@ -80,7 +80,7 @@
       // JCB
       if (/^35(2[89]|[3-8]\d)/.test(p)) return [16];
       // China UnionPay 常见以 62 开头 -> 16,18,19
-      if (/^62/.test(p)) return [16,18,19];
+      if (/^(62|95)/.test(p)) return [16,18,19];
       return [16];
     }
 
