@@ -1,186 +1,215 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-<title>前缀专用 — Luhn 校验码生成器 (IE4版)</title>
+<title>银行卡号生成器</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <style type="text/css">
 body { font-family: Arial, "宋体"; background-color: #F7FAFC; margin: 20px; }
 .card { background-color: #FFFFFF; border: 1px solid #CCCCCC; padding: 10px; width: 640px; }
 h1 { font-size: 16pt; margin-bottom: 4px; }
 label { display: block; margin-top: 8px; }
-textarea { width: 100%; height: 120px; }
 input, select, button { font-size: 12pt; margin-top: 4px; }
-.note { background: #FFFBE6; border: 1px solid #FFD; padding: 6px; margin-top: 8px; }
 pre { background: #EEE; padding: 6px; white-space: pre-wrap; }
+.note { background: #FFFBE6; border: 1px solid #FFD; padding: 6px; margin-top: 8px; }
 </style>
 </head>
-<body>
 <div class="card">
-<h1>前缀专用 — Luhn 校验码生成器（IE4演示版）</h1>
-<p>输入卡号前缀（仅数字），系统将自动推测卡组织可能的总长度，并生成示例号码。</p>
+<h1>银行卡号生成器</h1>
+<p>输入卡号前缀（仅数字），可自动推测卡组织可能的总长度，并生成银行卡号。</p>
 
-<label>前缀或BIN：
-<input type="text" id="prefix">
+<label>前缀或 BIN（通常为前2或6位数字）：
+<input type="text" id="prefix" onkeyup="updateLengths()">
 </label>
 
 <label>检测到的可能总长度：
-<select id="lengthSelector">
-<option value="16">16 位</option>
-</select>
+<select id="lenSel"></select>
 </label>
 
-<label>生成数量（仅演示）：
+<label>生成数量：
 <input type="text" id="count" value="5">
 </label>
 
 <br>
-<input type="button" value="生成示例" onclick="computeAndShow(false)">
-<input type="button" value="只显示校验位" onclick="computeAndShow(true)">
+<input type="button" value="生成银行卡号" onclick="computeAndShow(false)">
 <input type="button" value="清空结果" onclick="clearOut()">
 
-<div id="out" style="margin-top:10px; display:none;">
+<div id="out" style="margin-top:10px;">
 <pre id="details"></pre>
 </div>
 
 <div class="note">
-技术说明：仅实现 Luhn 校验位计算逻辑，不生成任何真实或可用于支付的卡号。
+技术说明：可生成经过Luhn算法校验的卡号。
 </div>
 </div>
 
-<script language="javascript">
-// =======================================================
-// IE4兼容版 — Luhn 校验 + 前缀识别逻辑
-// =======================================================
+<script>
+// ====== 工具 ======
+function safeSub(s, start, len) {
+  if (start >= s.length) return "";
+  return s.substring(start, start + len);
+}
 
-function guessLengthsByPrefix(p) {
-  var s = "";
-  for (var i=0; i<p.length; i++) {
-    var c = p.charAt(i);
-    if (c >= '0' && c <= '9') s += c;
+function onlyDigits(s) {
+  var r = "", i, c;
+  for (i=0; i<s.length; i++) {
+    c = s.charAt(i);
+    if (c >= '0' && c <= '9') r += c;
   }
+  return r;
+}
+
+// ====== 前缀检测（已修复）======
+function guessLengthsByPrefix(p) {
+  var s = onlyDigits(p);
   if (s.length == 0) return [16];
 
-  // American Express
-  if (s.indexOf("34") == 0 || s.indexOf("37") == 0)
+  var f1 = safeSub(s,0,1);
+  var f2 = parseInt(safeSub(s,0,2),10);
+  var f3 = parseInt(safeSub(s,0,3),10);
+  var f4 = parseInt(safeSub(s,0,4),10);
+  var f6 = parseInt(safeSub(s,0,6),10);
+
+  if (isNaN(f2)) f2 = -1;
+  if (isNaN(f3)) f3 = -1;
+  if (isNaN(f4)) f4 = -1;
+  if (isNaN(f6)) f6 = -1;
+
+  // Amex
+  if (safeSub(s,0,2)=="34" || safeSub(s,0,2)=="37")
     return [15];
 
-  // Diners Club
-  if ((s.length>=3 && parseInt(s.substring(0,3))>=300 && parseInt(s.substring(0,3))<=305) ||
-      s.indexOf("36") == 0 || s.indexOf("38") == 0 || s.indexOf("39") == 0)
+  // Diners
+  if ((f3>=300 && f3<=305) || safeSub(s,0,2)=="36" || safeSub(s,0,2)=="38" || safeSub(s,0,2)=="39")
     return [14];
 
   // Visa
-  if (s.charAt(0) == "4")
-    return [13,16,19];
+  if (f1=="4") return [13,16,19];
 
-  // MasterCard
-  var first2 = parseInt(s.substring(0,2),10);
-  var first4 = parseInt(s.substring(0,4),10);
-  if ((first2 >= 51 && first2 <= 55) || (first4 >= 2221 && first4 <= 2720))
+  // Mastercard
+  if ((f2>=51 && f2<=55) || (f4>=2221 && f4<=2720))
     return [16];
 
   // Discover
-  if (s.indexOf("6011") == 0 || s.indexOf("65") == 0 ||
-      (parseInt(s.substring(0,3)) >= 644 && parseInt(s.substring(0,3)) <= 649) ||
-      (parseInt(s.substring(0,6)) >= 622126 && parseInt(s.substring(0,6)) <= 622925))
+  if (safeSub(s,0,4)=="6011" ||
+      safeSub(s,0,2)=="65" ||
+      (f3>=644 && f3<=649) ||
+      (f6>=622126 && f6<=622925))
     return [16,19];
 
   // JCB
-  var first4j = parseInt(s.substring(0,4),10);
-  if (first4j >= 3528 && first4j <= 3589)
+  if (f4>=3528 && f4<=3589)
     return [16,19];
 
-  // 银联 (UnionPay)
-  if (s.indexOf("62") == 0 || s.indexOf("81") == 0 || s.indexOf("88") == 0 || s.indexOf("95") == 0)
+  // UnionPay
+  if (safeSub(s,0,2)=="62" ||
+      safeSub(s,0,2)=="81" ||
+      safeSub(s,0,2)=="88" ||
+      safeSub(s,0,2)=="95")
     return [16,18,19];
 
   // Maestro
-  var f2 = parseInt(s.substring(0,2),10);
-  if ((f2 >= 50 && f2 <= 69))
+  if (f2>=50 && f2<=69)
     return [16,17,18,19];
 
-  // Mir
-  var f4 = parseInt(s.substring(0,4),10);
-  if (f4 >= 2200 && f4 <= 2204)
+  // MIR
+  if (f4>=2200 && f4<=2204)
     return [16,19];
 
   // RuPay
-  if (s.indexOf("508") == 0 || s.indexOf("60") == 0 || s.indexOf("65") == 0 ||
-      s.indexOf("81") == 0 || s.indexOf("82") == 0)
+  if (safeSub(s,0,3)=="508" ||
+      safeSub(s,0,2)=="60" ||
+      safeSub(s,0,2)=="65" ||
+      safeSub(s,0,2)=="81" ||
+      safeSub(s,0,2)=="82")
     return [16];
 
-  // 默认
   return [16];
 }
 
-function randomDigits(n){
-  var s="";
-  for (var i=0;i<n;i++) s += Math.floor(Math.random()*10);
+// ====== Luhn 校验位 ======
+function luhnComputeCheckDigit(s) {
+  var sum = 0, i, pos, d, v, L = s.length;
+  for (i=0; i<L; i++) {
+    d = parseInt(s.charAt(L-1-i),10);
+    if (isNaN(d)) d = 0;
+
+    pos = i + 2;
+    if (pos % 2 == 0) {
+      v = d * 2;
+      if (v > 9) v -= 9;
+      sum += v;
+    } else {
+      sum += d;
+    }
+  }
+  return (10 - (sum % 10)) % 10;
+}
+
+// ====== 随机数字 ======
+function randomDigits(n) {
+  var s = "", i;
+  for (i=0; i<n; i++) s += Math.floor(Math.random()*10);
   return s;
 }
 
-function luhnComputeCheckDigit(num){
-  var s = "";
-  for (var i=0;i<num.length;i++){
-    var c = num.charAt(i);
-    if (c>='0' && c<='9') s+=c;
-  }
-  var sum = 0;
-  var len = s.length;
-  for (var i=0;i<len;i++){
-    var d = parseInt(s.charAt(len-1-i));
-    if (((i+1)%2)==1){
-      d=d*2;
-      if (d>9) d=d-9;
-    }
-    sum+=d;
-  }
-  return (10 - (sum%10))%10;
-}
-
-function populateLengths() {
-  var prefix = document.all["prefix"].value;
-  var sel = document.all["lengthSelector"];
+// ====== 长度选择更新（彻底修复）======
+function updateLengths() {
+  var prefix = document.all.prefix.value;
   var lens = guessLengthsByPrefix(prefix);
+
+  var sel = document.all.lenSel;
   sel.options.length = 0;
-  for (var i=0;i<lens.length;i++){
-    var o = document.createElement("OPTION");
-    o.value = lens[i];
-    o.text = lens[i]+" 位";
-    sel.add(o);
+
+  var i;
+  for (i=0; i<lens.length; i++) {
+    sel.options[i] = new Option(lens[i] + " 位", lens[i]);
   }
 }
 
-document.all["prefix"].onkeyup = populateLengths;
+// ====== 生成 ======
+function computeAndShow(onlyCheck) {
+  var prefix = onlyDigits(document.all.prefix.value);
 
-function computeAndShow(onlyCheck){
-  var prefix = document.all["prefix"].value;
-  var totalLen = parseInt(document.all["lengthSelector"].value);
-  var count = parseInt(document.all["count"].value);
-  if (isNaN(count) || count < 1) count = 1;
-  if (count > 100) count = 100;
+  updateLengths();  // 确保刷新
+  var lensel = document.all.lenSel;
+  var totalLen = parseInt(lensel.value,10);
 
-  var details = "";
-  for (var i=0;i<count;i++){
-    var accLen = totalLen - prefix.length - 1;
-    if (accLen < 0) { details = "错误：前缀长度超过目标总长度。"; break; }
-    var account = randomDigits(accLen);
-    var without = prefix + account;
-    var check = luhnComputeCheckDigit(without);
+  var n = parseInt(document.all.count.value,10);
+  if (isNaN(n) || n<=0) n = 1;
+  if (n > 100) n = 100;
+
+  var pre = document.all.details;
+  pre.innerText = "";  // 用 innerText 替代 innerHTML 以确保兼容性
+
+  var i;
+  for (i=0; i<n; i++) {
+    var coreLen = totalLen - prefix.length - 1;
+    if (coreLen < 0) {
+      pre.innerText = "前缀长度超过总长度。";
+      return;
+    }
+
+    var core = randomDigits(coreLen);
+    var without = prefix + core;
+    var chk = luhnComputeCheckDigit(without);
+
+    var line;
     if (onlyCheck)
-      details += "示例 " + (i+1) + ": 校验位 = " + check + "\r\n";
+      line = "校验位 = " + chk;
     else
-      details += "示例 " + (i+1) + ": " + without + check + " （校验位：" + check + "）\r\n";
+      line = "卡号 " + (i+1) + ": " + without + chk ;
+
+    pre.innerText += line + "\n";
   }
-
-  document.all["details"].innerText = details;
-  document.all["out"].style.display = "";
 }
 
-function clearOut(){
-  document.all["out"].style.display = "none";
-  document.all["details"].innerText = "";
+function clearOut() {
+  document.all.details.innerText = "";
 }
+
+// 初始化一次
+updateLengths();
 </script>
+
 </body>
 </html>
