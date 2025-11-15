@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>前缀专用 — Luhn 校验码生成器（仅用于演示）</title>
+  <title>银行卡号生成器</title>
   <style>
     :root{--bg:#f7fafc;--card:#fff;--muted:#6b7280}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei";background:var(--bg);padding:28px}
@@ -25,29 +25,30 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>前缀专用 — Luhn 校验码生成器（演示）</h1>
-      <p class="lead">输入卡号前缀（仅数字），本工具会：<strong>推测可能的总长度（含银联 62）</strong>，并为所选总长度生成 Luhn 校验位。</p>
+      <h1>银行卡号生成器</h1>
+      <p class="lead">根据前缀自动判断卡片长度，支持常见的卡组织。用户可自行选择长度生成银行卡号或仅计算校验位。</p>
 
-      <label>前缀或BIN
-        <input id="prefix" inputmode="numeric" pattern="\d*" placeholder="示例：或 62" value="" />
+      <label>卡片前缀（前 2~6 位）：
+        <input id="prefix" inputmode="numeric" pattern="\d*" placeholder="例如：62" value="" />
       </label>
 
-      <label>检测到的可能总长度（可手动选择）
+      <label>预计生成的总长度：
         <select id="lengthSelector"></select>
       </label>
 
-      <label>生成数量（用于展示完整号码；注意：校验位仅一位）
-        <input id="count" type="number" min="1" max="100" value="5" />
+      <label>生成数量：
+        <input id="count" type="number" min="1" max="10000"  />
       </label>
 
       <div class="actions">
-        <button id="compute">生成校验码与示例卡号</button>
-        <button id="onlyCheck">只显示校验位（不生成完整号）</button>
-        <button id="clear">清除结果</button>
+        <button id="compute">生成银行卡号</button>
+        <button id="clear">清空</button>
       </div>
 
       <div class="note" id="note">
-        test
+        [2025.11.15 更新]<br>
+        1. 新增对中国银联（前缀62、95）的支持。<br>
+        2. 提高银行卡号数量上限到 10000 张<br>
       </div>
 
       <div id="out" class="result" style="display:none">
@@ -58,40 +59,31 @@
       <div id="warn" class="note danger" style="display:none;margin-top:12px"></div>
 
       <hr style="margin-top:18px" />
-      <p class="small">技术说明：本工具只实现 Luhn 校验位的计算；不包含任何能用于生成真实 CVV 或伪造可用于支付的卡号的逻辑。</p>
+      <p class="small">技术说明：可生成经过Luhn算法校验的卡号。</p>
     </div>
   </div>
 
   <script>
-    // 扩展的长度猜测（加入银联 62：16/18/19）
     function guessLengthsByPrefix(prefix){
       const p = prefix.replace(/\D/g,'');
       if (p.length === 0) return [16];
-      // Amex
       if (/^3[47]/.test(p)) return [15];
-      // Diners
       if (/^(30[0-5]|36|38)/.test(p)) return [14];
-      // Visa
       if (/^4/.test(p)) return [16,13,19];
-      // Mastercard
       if (/^(5[1-5]|22[2-9]|2[3-6]|27[0-1]|2720)/.test(p)) return [16];
-      // Discover
       if (/^(6011|65|64[4-9])/.test(p)) return [16];
-      // JCB
       if (/^35(2[89]|[3-8]\d)/.test(p)) return [16];
-      // China UnionPay 常见以 62 开头 -> 16,18,19
       if (/^(62|95)/.test(p)) return [16,18,19];
       return [16];
     }
 
-    // Luhn 计算校验位
     function luhnComputeCheckDigit(digitsWithoutCheck){
       const s = digitsWithoutCheck.replace(/\D/g,'');
       const totalLen = s.length + 1;
       let sum = 0;
       for (let i = 0; i < s.length; i++){
         const d = parseInt(s[s.length - 1 - i], 10);
-        const posFromRight = i + 2; // 校验位为位置1
+        const posFromRight = i + 2;
         let val = d;
         if (posFromRight % 2 === 0){
           val = d * 2;
@@ -125,55 +117,51 @@
       document.getElementById('warn').style.display = 'none';
     });
 
-    
     function computeAndShow(onlyCheck=false){
       const prefix = document.getElementById('prefix').value.trim();
       if (!/^[0-9]*$/.test(prefix)){
-        alert('前缀只能包含数字'); return;
+        alert('前缀只能为数字'); return;
       }
       
       const sel = document.getElementById('lengthSelector');
       const totalLen = parseInt(sel.value, 10);
-      const count = Math.max(1, Math.min(100, parseInt(document.getElementById('count').value || '1',10)));
+      const count = Math.max(1, Math.min(10000, parseInt(document.getElementById('count').value || '1',10)));
 
       const out = document.getElementById('out');
       out.style.display = 'block';
       const summary = document.getElementById('summary');
-      summary.textContent = `前缀：${prefix || '(空)'} — 选定总长度：${totalLen} 位 — 生成数量：${count}`;
+      summary.textContent = `给定的前缀为 ${prefix || '(空)'}，选择总长度 ${totalLen} 位，生成数量为 ${count} 个卡号`;
 
       const details = document.getElementById('details');
       details.innerHTML = '';
 
       for (let i=0;i<count;i++){
-        // 生成占位账号段（不含校验位）
         const p = prefix.replace(/\D/g,'');
         const accLen = totalLen - p.length - 1;
-        if (accLen < 0){ details.textContent = '错误：前缀长度超过或等于目标总长度。'; return; }
+        if (accLen < 0){ details.textContent = '前缀长度超过目标总长度'; return; }
         const account = randomDigits(accLen);
         const withoutCheck = p + account;
         const check = luhnComputeCheckDigit(withoutCheck);
         if (onlyCheck){
           const pre = document.createElement('pre');
-          pre.textContent = `补全位置（示例 ${i+1}）：校验位 = ${check}`;
+          pre.textContent = `该功能已被移除`;
           details.appendChild(pre);
         } else {
           const full = withoutCheck + String(check);
           const pre = document.createElement('pre');
-          pre.textContent = `示例 ${i+1}: ${full}  （校验位：${check}）`;
+          pre.textContent = `卡号 ${i+1}: ${full}  `;
           details.appendChild(pre);
         }
       }
     }
 
     document.getElementById('compute').addEventListener('click', ()=>computeAndShow(false));
-    document.getElementById('onlyCheck').addEventListener('click', ()=>computeAndShow(true));
     document.getElementById('clear').addEventListener('click', ()=>{
       document.getElementById('out').style.display = 'none';
       document.getElementById('details').innerHTML = '';
       document.getElementById('warn').style.display = 'none';
     });
 
-    // 初始化
     populateLengths();
   </script>
 </body>
