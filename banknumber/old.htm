@@ -177,7 +177,7 @@ function computeAndShow(onlyCheck) {
 
   var n = parseInt(document.all.count.value,10);
   if (isNaN(n) || n<=0) n = 1;
-  if (n > 100) n = 100;
+  
 
   var pre = document.all.details;
   pre.innerText = "";  // 用 innerText 替代 innerHTML 以确保兼容性
