@@ -14,6 +14,7 @@ pre { background: #EEE; padding: 6px; white-space: pre-wrap; }
 .note { background: #FFFBE6; border: 1px solid #FFD; padding: 6px; margin-top: 8px; }
 </style>
 </head>
+<body>
 <div class="card">
 <h1>银行卡号生成器</h1>
 <p>输入卡号前缀（仅数字），可自动推测卡组织可能的总长度，并生成银行卡号。</p>
@@ -59,7 +60,7 @@ function onlyDigits(s) {
   return r;
 }
 
-// ====== 前缀检测（已修复）======
+// ====== 前缀检测 ======
 function guessLengthsByPrefix(p) {
   var s = onlyDigits(p);
   if (s.length == 0) return [16];
@@ -153,7 +154,7 @@ function randomDigits(n) {
   return s;
 }
 
-// ====== 长度选择更新（彻底修复）======
+// ====== 长度选择更新 ======
 function updateLengths() {
   var prefix = document.all.prefix.value;
   var lens = guessLengthsByPrefix(prefix);
@@ -167,20 +168,36 @@ function updateLengths() {
   }
 }
 
-// ====== 生成 ======
+// ====== 生成 (已修复Bug：防止重置长度) ======
 function computeAndShow(onlyCheck) {
   var prefix = onlyDigits(document.all.prefix.value);
 
-  updateLengths();  // 确保刷新
+  // 1. 获取当前用户选中的值（在刷新列表之前）
+  var savedVal = document.all.lenSel.value;
+
+  // 2. 刷新列表（确保前缀粘贴等情况能更新列表）
+  updateLengths(); 
+  
+  // 3. 尝试恢复之前的选中值
   var lensel = document.all.lenSel;
+  if (savedVal != "") {
+    for (var k=0; k<lensel.options.length; k++) {
+      if (lensel.options[k].value == savedVal) {
+        lensel.selectedIndex = k;
+        break;
+      }
+    }
+  }
+
+  // 4. 读取最终的长度值进行计算
   var totalLen = parseInt(lensel.value,10);
 
   var n = parseInt(document.all.count.value,10);
   if (isNaN(n) || n<=0) n = 1;
-  
+   
 
   var pre = document.all.details;
-  pre.innerText = "";  // 用 innerText 替代 innerHTML 以确保兼容性
+  pre.innerText = ""; 
 
   var i;
   for (i=0; i<n; i++) {
