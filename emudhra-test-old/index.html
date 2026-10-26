@@ -1,0 +1,416 @@
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>证书信任自测</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    color: #222;
+    background: #f4f6f8;
+    font-family: Arial, "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #d9dee3;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .intro { margin: 0 0 18px; color: #555; }
+  .event-background {
+    margin: 16px 0 18px;
+    padding: 12px 14px;
+    background: #f7f9fb;
+    border: 1px solid #d9e1e8;
+    border-left: 4px solid #527da5;
+  }
+  .event-background h2 { margin: 0 0 8px; font-size: 17px; }
+  .event-background p { margin: 7px 0; }
+  .event-background p:last-child { margin-bottom: 0; }
+  .actions { margin: 0 0 16px; }
+  button {
+    padding: 8px 16px;
+    color: #fff;
+    background: #245a91;
+    border: 1px solid #19466f;
+    border-radius: 3px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:disabled { color: #eee; background: #888; border-color: #777; cursor: default; }
+  #summary {
+    margin: 12px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    overflow-wrap: break-word;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { padding: 9px 10px; border: 1px solid #cfd5da; text-align: left; vertical-align: top; }
+  th { background: #eaf0f5; font-weight: 600; }
+  td a { color: #155b9a; overflow-wrap: anywhere; }
+  .bad { color: #c00000; font-weight: bold; }
+  .good { color: #008000; font-weight: bold; }
+  .pending { color: #666; }
+  abbr { cursor: help; text-decoration: underline dotted; }
+  .note { margin: 14px 0 0; color: #555; font-size: 12px; }
+  @media (max-width: 640px) {
+    body { padding: 8px; }
+    .wrap { padding: 12px; }
+    h1 { font-size: 21px; }
+    th, td { padding: 7px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>证书信任自测</h1>
+  <section class="event-background" aria-labelledby="event-title">
+    <h2 id="event-title">事件背景</h2>
+    <p>本页面用于辅助观察 eMudhra 的 G3B／G3C TLS 中间 CA 证书在不同证书链下的连接表现。相关调查涉及被标记为已吊销的 eMudhra 中间 CA 证书；所掌握的清单将部分证书的吊销时间记为 <time datetime="2026-10-18T09:24:32Z">2026 年 10 月 18 日 09:24:32 UTC</time>，吊销原因为 <code>ca_compromise</code>（CA 私钥或证书颁发机构遭到泄露）。这不等于页面中的每个测试端点都必然使用了同一张已吊销证书。</p>
+    <p>测试列表分别通过 <code>emSign Root TLS CA - G3</code> 与 <code>AAA Certificate Services</code> 两条根证书链进行探测，并额外包含标记为 <code>No CT</code> 的端点，用于观察缺少证书透明度（Certificate Transparency，CT）记录的情况。此页面是浏览器端的连接现象测试，不是完整的证书审计工具，也不能单凭测试结果确认吊销机制、OneCRL 或 CT 策略究竟是哪一项导致连接失败。</p>
+  </section>
+  <p class="intro">逐一测试下列证书链对应的 HTTPS 主机，并显示连接测试结果。</p>
+
+  <div class="actions">
+    <button id="rerun" type="button">重新测试</button>
+  </div>
+
+  <div id="summary" role="status" aria-live="polite">准备测试……</div>
+
+  <div class="table-wrap">
+    <table id="results">
+      <thead>
+        <tr>
+          <th scope="col">测试主机／证书</th>
+          <th scope="col">根证书链</th>
+          <th scope="col">测试结果</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <p class="note">注意：本页以 no-cors 模式探测（目标站无需设置 CORS，也不会读取响应内容），仅判断连接／TLS 是否成功。连接失败不一定代表证书已被吊销或浏览器成功拦截。DNS、网络及代理服务器等因素都可能影响结果；请同时确认控制探测站是否可连接。</p>
+</div>
+
+<script>
+/* ES5 兼容的证书信任检测器.
+   Intended for Chrome 49. Requires #results tbody, #summary and #rerun. */
+(function (window, document) {
+  'use strict';
+
+  var HOSTS = [
+    { host: 'dv-g3b-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'emSign Root TLS CA - G3' },
+    { host: 'dv-g3c-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'emSign Root TLS CA - G3' },
+    { host: 'ov-g3b-emudhra.we-have-a-problem.com', label: 'CN=EM OV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'emSign Root TLS CA - G3' },
+    { host: 'ov-g3c-emudhra.we-have-a-problem.com', label: 'CN=EM OV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'emSign Root TLS CA - G3' },
+    { host: 'ev-g3b-emudhra.we-have-a-problem.com', label: 'CN=EM EV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'emSign Root TLS CA - G3' },
+    { host: 'ev-g3c-emudhra.we-have-a-problem.com', label: 'CN=EM EV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'emSign Root TLS CA - G3' },
+    { host: 'dv-g3b-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'AAA Certificate Services' },
+    { host: 'dv-g3c-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'AAA Certificate Services' },
+    { host: 'ov-g3b-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM OV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'AAA Certificate Services' },
+    { host: 'ov-g3c-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM OV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'AAA Certificate Services' },
+    { host: 'ev-g3b-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM EV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'AAA Certificate Services' },
+    { host: 'ev-g3c-aaa-emudhra.we-have-a-problem.com', label: 'CN=EM EV TLS CA - G3C, O=eMudhra Inc, C=US', root: 'AAA Certificate Services' },
+    { host: 'dv-g3b-noct-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'emSign Root TLS CA - G3', noct: true },
+    { host: 'dv-g3b-aaa-noct-emudhra.we-have-a-problem.com', label: 'CN=EM DV TLS CA - G3B, O=eMudhra BV, C=NL', root: 'AAA Certificate Services', noct: true }
+  ];
+
+  var PROBE_HOST = 'probe-emudhra.we-have-a-problem.com';
+  var TIMEOUT_MS = 10000;
+  var COOLDOWN_MS = 10000;
+  var DEFAULT_STRINGS = {
+    noctTitle: '此证书没有 Certificate Transparency（证书透明度）记录或 SCT。',
+    notYetChecked: '尚未测试',
+    checking: '测试中……',
+    insecure: '不安全：连接成功',
+    didNotConnect: '连接未成功（可能已拦截）',
+    timedOut: '无法判定：连接超时',
+    offline: '无法判定：浏览器显示离线',
+    unexpected: '无法判定：收到非预期的 HTTP 响应',
+    summary: '测试结果：{n} / {total} 条证书链可成功连接。',
+    incomplete: '另有 {n} 项无法判定，结果不完整。',
+    runAgain: '重新测试',
+    livenessFailed: '控制探测站无法连接；测试结果可能无效。'
+  };
+  var S = {};
+  var suppliedStrings = window.CHECKER_STRINGS || {};
+  var key;
+  for (key in DEFAULT_STRINGS) {
+    if (Object.prototype.hasOwnProperty.call(DEFAULT_STRINGS, key)) {
+      S[key] = Object.prototype.hasOwnProperty.call(suppliedStrings, key) ?
+        suppliedStrings[key] : DEFAULT_STRINGS[key];
+    }
+  }
+
+  var resultsBody = document.querySelector('#results tbody');
+  var summary = document.getElementById('summary');
+  var rerun = document.getElementById('rerun');
+  var cells = [];
+  var running = false;
+  var hasStarted = false;
+
+  if (!resultsBody || !summary || !rerun) {
+    return;
+  }
+
+  function cell(text, cls) {
+    var td = document.createElement('td');
+    td.appendChild(document.createTextNode(text));
+    if (cls) {
+      td.className = cls;
+    }
+    return td;
+  }
+
+  function runNonce() {
+    var bytes = [];
+    var cryptoObject = window.crypto;
+    var i;
+    var value;
+    var output = '';
+    if (cryptoObject && cryptoObject.getRandomValues && window.Uint8Array) {
+      try {
+        var array = new window.Uint8Array(16);
+        cryptoObject.getRandomValues(array);
+        for (i = 0; i < array.length; i++) {
+          value = array[i].toString(16);
+          output += value.length < 2 ? '0' + value : value;
+        }
+        return output;
+      } catch (e) {}
+    }
+    for (i = 0; i < 16; i++) {
+      value = Math.floor(Math.random() * 256).toString(16);
+      bytes.push(value.length < 2 ? '0' + value : value);
+    }
+    return bytes.join('');
+  }
+
+  /* Cross-origin-safe probe.
+     XHR needs the target server to send Access-Control-Allow-Origin, otherwise
+     it always fails (and would be misreported as "blocked"). Instead we use
+     fetch(mode:'no-cors') -- no CORS headers needed; the opaque response
+     resolves iff TLS + HTTP succeeded and rejects on connection/TLS failure.
+     Browsers without fetch fall back to a <script> tag, whose load/error
+     events also do not require CORS. */
+  function probe(host, nonce, callback) {
+    var timer;
+    var finished = false;
+    var script = null;
+    var url = 'https://' + host + '/?t=' +
+      new Date().getTime() + '&r=' + encodeURIComponent(nonce);
+
+    function cleanup() {
+      if (script) {
+        script.onload = script.onerror = null;
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+        script = null;
+      }
+    }
+
+    function finish(result) {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      window.clearTimeout(timer);
+      cleanup();
+      callback(result);
+    }
+
+    function unknown(text) {
+      finish({ status: 'unknown', text: text });
+    }
+
+    function connected() {
+      finish({ status: 'connected', text: S.insecure });
+    }
+
+    function failed() {
+      if (navigator.onLine === false) {
+        unknown(S.offline);
+      } else {
+        finish({ status: 'blocked', text: S.didNotConnect });
+      }
+    }
+
+    timer = window.setTimeout(function () {
+      unknown(S.timedOut);
+    }, TIMEOUT_MS);
+
+    try {
+      if (window.fetch) {
+        window.fetch(url, { mode: 'no-cors', credentials: 'omit' })
+          .then(function () { connected(); }, function () { failed(); });
+      } else {
+        script = document.createElement('script');
+        script.async = true;
+        script.onload = connected;
+        script.onerror = failed;
+        script.src = url;
+        (document.head || document.getElementsByTagName('head')[0]).appendChild(script);
+      }
+    } catch (e) {
+      failed();
+    }
+  }
+
+  function createRows() {
+    var i;
+    var item;
+    var tr;
+    var tdName;
+    var link;
+    var abbr;
+    var tdRoot;
+    var tdResult;
+
+    for (i = 0; i < HOSTS.length; i++) {
+      item = HOSTS[i];
+      tr = document.createElement('tr');
+      tdName = document.createElement('td');
+      link = document.createElement('a');
+      link.href = 'https://' + item.host + '/';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.appendChild(document.createTextNode(item.label));
+      tdName.appendChild(link);
+
+      if (item.noct) {
+        abbr = document.createElement('abbr');
+        abbr.title = S.noctTitle;
+        abbr.appendChild(document.createTextNode('No CT'));
+        tdName.appendChild(document.createTextNode(' ('));
+        tdName.appendChild(abbr);
+        tdName.appendChild(document.createTextNode(')'));
+      }
+
+      tdRoot = cell(item.root);
+      tdRoot.setAttribute('translate', 'no');
+      tdResult = cell(S.notYetChecked, 'pending');
+      tr.appendChild(tdName);
+      tr.appendChild(tdRoot);
+      tr.appendChild(tdResult);
+      resultsBody.appendChild(tr);
+      cells.push(tdResult);
+    }
+  }
+
+  function run(callback) {
+    var nonce = runNonce();
+    var remaining = HOSTS.length;
+    var connected = 0;
+    var unknown = 0;
+    var livenessDone = false;
+    var livenessOK = false;
+    var completed = false;
+    var i;
+
+    summary.textContent = '';
+    for (i = 0; i < cells.length; i++) {
+      cells[i].textContent = S.checking;
+      cells[i].className = 'pending';
+    }
+
+    function finishIfReady() {
+      var message;
+      var note;
+      if (completed || remaining !== 0 || !livenessDone) {
+        return;
+      }
+      completed = true;
+      message = S.summary.replace('{n}', connected).replace('{total}', HOSTS.length);
+      summary.textContent = message;
+
+      if (unknown > 0) {
+        summary.appendChild(document.createTextNode(' '));
+        summary.appendChild(document.createTextNode(
+          S.incomplete.replace('{n}', unknown)
+        ));
+      }
+      if (!livenessOK) {
+        note = document.createElement('span');
+        note.className = 'bad';
+        note.appendChild(document.createTextNode(S.livenessFailed));
+        summary.appendChild(document.createTextNode(' '));
+        summary.appendChild(note);
+      }
+      callback();
+    }
+
+    probe(PROBE_HOST, nonce, function (result) {
+      livenessDone = true;
+      livenessOK = result.status === 'connected';
+      finishIfReady();
+    });
+
+    for (i = 0; i < HOSTS.length; i++) {
+      (function (index) {
+        probe(HOSTS[index].host, nonce, function (result) {
+          cells[index].textContent = result.text;
+          if (result.status === 'connected') {
+            cells[index].className = 'bad';
+            connected++;
+          } else if (result.status === 'blocked') {
+            cells[index].className = 'good';
+          } else {
+            cells[index].className = 'pending';
+            unknown++;
+          }
+          remaining--;
+          finishIfReady();
+        });
+      }(i));
+    }
+  }
+
+  function start() {
+    if (running) {
+      return;
+    }
+    running = true;
+    hasStarted = true;
+    rerun.disabled = true;
+    run(function () {
+      window.setTimeout(function () {
+        rerun.textContent = S.runAgain;
+        rerun.disabled = false;
+        running = false;
+      }, COOLDOWN_MS);
+    });
+  }
+
+  rerun.addEventListener('click', start, false);
+  createRows();
+
+  if (document.readyState === 'complete' ||
+      document.readyState === 'interactive') {
+    start();
+  } else {
+    window.addEventListener('load', function () {
+      if (!hasStarted) {
+        start();
+      }
+    }, false);
+  }
+}(window, document));
+</script>
+</body>
+</html>
