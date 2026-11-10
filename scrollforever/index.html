@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name='description' content='原站-无限下滑'>
+  <title>无限下滑</title>
+  <link rel="stylesheet" href="https://bgbp1za0.github.io/style.css">
+  <link rel="icon" href="https://bgbp1za0.github.io/favicon.ico">
+  <style>
+    #wrapper {
+
+      margin: 0 auto;
+    }
+
+    .box {
+      background: #ffffff;
+      padding: 30px 20px;
+      /* 加高一点点 */
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      position: relative;
+    }
+
+    /* 确保 Chrome 46 认账的老版横向渐变条 */
+    .box-gradient-line {
+      height: 6px;
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      background: -webkit-linear-gradient(left,
+          #5BCEFA 0%, #5BCEFA 20%,
+          #F5A9B8 20%, #F5A9B8 40%,
+          #FFFFFF 40%, #FFFFFF 60%,
+          #F5A9B8 60%, #F5A9B8 80%,
+          #5BCEFA 80%, #5BCEFA 100%);
+    }
+
+    #status {
+      text-align: center;
+      padding: 15px;
+      color: #666;
+    }
+
+    /* 悬浮控制面板 */
+    #auto-panel {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 999;
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    #auto-btn {
+      display: block;
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      background: #5BCEFA;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #auto-btn.running {
+      background: #F5A9B8;
+    }
+
+    #auto-speed-text {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <ul class="ys-head">
+      <li><a href="https://bgbp1za0.github.io/index.html">首页</a></li>
+      <li><a href="https://bgbp1za0.github.io/bayinhe.html">八音盒</a></li>
+      <li><a href="https://bgbp1za0.github.io/shop.html">商城</a></li>
+      <li><a href="https://ys.mihoyo.com/cloud/#/">云原神</a></li>
+      <li><a href="https://bgbp1za0.github.io/tools.html">工具合集</a></li>
+    </ul>
+  </header>
+  <nav class="banner">
+    <img src="https://bgbp1za0.github.io/images/bann.png" alt="">
+  </nav>
+  <div>
+    <h1>无限下滑</h1>
+    <div class="shengyiwu-list">
+      <div id="wrapper">
+        <div class="box">
+          <h3>欢迎使用</h3>
+          <p>嗷呜~！你好呀，欢迎使用这个插件在edge浏览器按下鼠标中键自动滚屏来刷bing积分捏~！ ~(￣▽￣)~*</p>
+          <div class="box-gradient-line"></div>
+        </div>
+      </div>
+
+      <div id="status">正在加载更多...</div>
+    </div>
+    <div id="auto-panel">
+      <button id="auto-btn" type="button">▶ 开始自动滚动</button>
+      <div id="auto-speed-text">速度：<span id="auto-speed-val">180</span> px/秒</div>
+      <input id="auto-speed" type="range" min="20" max="600" step="10" value="180">
+    </div>
+    <script>
+      var wrapper = document.getElementById('wrapper');
+      var statusTip = document.getElementById('status');
+      var itemIndex = 2;
+      var isWaiting = false;
+
+      // 纯粹同步生成卡片并塞进页面（去掉setTimeout延迟，方便初始化时连续调用）
+      function appendNewBox() {
+        var div = document.createElement('div');
+        div.className = 'box';
+        div.innerHTML = '<h3>脚本生成的卡片 ' + itemIndex + '</h3>' +
+          '<p>嗷呜。这是脚本生成的第 ' + itemIndex + ' 行卡片~~~(づ￣ 3￣)づ</p>' +
+          '<div class="box-gradient-line"></div>';
+        wrapper.appendChild(div);
+        itemIndex++;
+      }
+
+      // 【核心】检查并撑满屏幕的函数
+      function checkAndFillPage() {
+        var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        var documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+
+        // 如果整个网页的高度 还不如 浏览器窗口高，说明没有滚动条
+        // 那就疯狂塞卡片，直到塞出滚动条为止
+        while (documentHeight <= windowHeight) {
+          appendNewBox();
+          // 塞完一个，重新算一次网页总高度
+          documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+        }
+      }
+
+      // 页面刚进来，先执行一次检查，把第一屏喂饱
+      checkAndFillPage();
+
+      // 监听滚动事件（当有滚动条后，用户手滚时触发）
+      window.onscroll = function () {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+        var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        var documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+
+        // 距离底部还有 100 像素时触发异步加载
+        if (scrollTop + windowHeight >= documentHeight - 100) {
+          if (isWaiting) return;
+          isWaiting = true;
+          statusTip.innerHTML = '正在疯狂进货中...';
+
+          // 手动滚动时，延迟 300ms 显得有加载动效
+          setTimeout(function () {
+            for (var i = 0; i < 3; i++) {
+              appendNewBox();
+            }
+            isWaiting = false;
+            statusTip.innerHTML = '往下滑动自动加载';
+          }, 300);
+        }
+      };
+      // ===== 自动滚动功能 =====
+      var autoBtn = document.getElementById('auto-btn');
+      var autoSpeed = document.getElementById('auto-speed');
+      var autoSpeedVal = document.getElementById('auto-speed-val');
+
+      var autoScrolling = false;
+      var autoSpeedPx = 180;   // 每秒滚动多少像素
+      var autoLastTime = 0;
+      var autoRemainder = 0;   // 累积还没滚掉的小数像素
+      var autoRafId = 0;
+
+      function autoStep(timestamp) {
+        if (!autoScrolling) return;
+
+        if (!autoLastTime) autoLastTime = timestamp;
+        var dt = timestamp - autoLastTime;
+        autoLastTime = timestamp;
+        if (dt > 100) dt = 100; // 防止切走标签页回来后突然猛跳
+
+        autoRemainder += autoSpeedPx * dt / 1000;
+        var move = Math.floor(autoRemainder);
+        if (move >= 1) {
+          autoRemainder -= move;
+          window.scrollBy(0, move);
+        }
+
+        autoRafId = requestAnimationFrame(autoStep);
+      }
+
+      function startAutoScroll() {
+        if (autoScrolling) return;
+        autoScrolling = true;
+        autoLastTime = 0;
+        autoRemainder = 0;
+        autoBtn.className = 'running';
+        autoBtn.innerHTML = '⏸ 停止自动滚动';
+        autoRafId = requestAnimationFrame(autoStep);
+      }
+
+      function stopAutoScroll() {
+        autoScrolling = false;
+        cancelAnimationFrame(autoRafId);
+        autoBtn.className = '';
+        autoBtn.innerHTML = '▶ 开始自动滚动';
+      }
+
+      autoBtn.onclick = function () {
+        if (autoScrolling) {
+          stopAutoScroll();
+        } else {
+          startAutoScroll();
+        }
+      };
+
+      autoSpeed.oninput = function () {
+        autoSpeedPx = parseInt(autoSpeed.value, 10);
+        autoSpeedVal.innerHTML = autoSpeedPx;
+      };
+
+      // 鍵盤控制：Enter 開始/停止，Esc 停止
+      document.onkeydown = function (e) {
+        e = e || window.event;
+        var key = e.keyCode || e.which;
+
+        if (key === 13) {            // 回車
+          if (e.preventDefault) e.preventDefault();
+          if (e.repeat) return;      // 按住不放時不要反覆切換
+          if (autoScrolling) {
+            stopAutoScroll();
+          } else {
+            startAutoScroll();
+          }
+        } else if (key === 27) {     // Esc
+          stopAutoScroll();
+        }
+      };
+    </script>
+
+  </div>
+</body>
+
+</html>
