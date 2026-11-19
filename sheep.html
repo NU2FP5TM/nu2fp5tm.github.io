@@ -1,7 +1,8 @@
+
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>羊了个羊 (IE5 版)</title>
+<title>羊了个羊 (IE6 版)</title>
 <style type="text/css">
 body{margin:0;padding:8px;background:#c8e6b0;font-size:12px;font-family:Tahoma,Arial,sans-serif;text-align:center}
 h3{margin:4px 0}
@@ -17,45 +18,88 @@ var NT=10;          // 图案种类数
 var LAYERS=5;       // 层数
 var SLOTS=7;        // 卡槽数
 var W=36, H=40;     // 牌尺寸 (要和 CSS .tile 一致)
-
+var USE_IMG=1;      // 1=尝试加载图片；0=完全不发图片请求，直接用 Webdings 字形
+ 
 /* 图片槽：IMG[k] = 第 k 种牌的图片 (建议 28x28 gif)。
    找不到档案时会自动退到 RES[k]，再退到 Webdings 字形 */
 var IMG=[], RES=[], i0;
 for(i0=0;i0<NT;i0++){ IMG[i0]='images/t'+i0+'.gif'; }
 /* 系统 DLL 资源（选填）：格式 res://dll名称/#资源类型/#资源ID
    例： RES[0]='res://shell32.dll/#2/#130';  （ID 请自己用 Resource Hacker 查） */
-
+ 
 /* 最终备援：Webdings 字形 + 颜色 */
 var CH=['B','C','D','E','F','G','H','I','J','K'];
 var COL=['#d33','#36c','#393','#c60','#909','#088','#963','#c39','#555','#690'];
 /* ================== */
-
+ 
 var T=[], B=[], over=0, msg='';
-
+ 
+/* 每种牌当前使用的层级：0=IMG 1=RES 2=Webdings 字形；失败只会往后退，不会回头重试 */
+var LV=[], probed=0;
+for(i0=0;i0<NT;i0++){ LV[i0]=USE_IMG?0:2; }
+ 
 function rnd(n){ return Math.floor(Math.random()*n); }
 function shuffleArr(a){
   var i,j,t;
   for(i=a.length-1;i>0;i--){ j=rnd(i+1); t=a[i]; a[i]=a[j]; a[j]=t; }
 }
+ 
+function srcAt(k,lv){
+  if(lv==0) return IMG[k]||'';
+  if(lv==1) return RES[k]||'';
+  return '';
+}
+function skipEmpty(k){
+  while(LV[k]<2 && !srcAt(k,LV[k])) LV[k]++;
+}
+ 
 function glyph(k){
   return '<span style="font-family:Webdings;font-size:26px;line-height:36px;color:'+COL[k]+'">'+CH[k]+'</span>';
 }
 function icon(k){
-  if(IMG[k]) return '<img src="'+IMG[k]+'" width="28" height="28" style="margin-top:4px" onerror="imgFail(this,'+k+',1)">';
-  if(RES[k]) return '<img src="'+RES[k]+'" width="28" height="28" style="margin-top:4px" onerror="imgFail(this,'+k+',0)">';
-  return glyph(k);
+  skipEmpty(k);
+  if(LV[k]>=2) return glyph(k);
+  return '<img src="'+srcAt(k,LV[k])+'" width="28" height="28" style="margin-top:4px" onerror="imgFail(this,'+k+','+LV[k]+')">';
 }
-function imgFail(el,k,tryRes){
+/* 图片加载失败：把这种牌永久降级，并把这张 img 换成新层级的图标 */
+function imgFail(el,k,lv){
   el.onerror=null;
-  if(tryRes && RES[k]){
-    el.onerror=function(){ imgFail(el,k,0); };
-    el.src=RES[k];
-    return;
-  }
-  el.outerHTML=glyph(k);
+  if(LV[k]==lv) LV[k]=lv+1;   /* 只在还没降级时才降，避免多个 img 重复降 */
+  el.outerHTML=icon(k);
 }
-
+ 
+/* 开局前每种牌只探测一次 */
+function probeOne(k,cb){
+  var im;
+  function next(){
+    skipEmpty(k);
+    if(LV[k]>=2){ cb(); return; }
+    im=new Image();
+    im.onload=function(){ im.onload=null; im.onerror=null; cb(); };
+    im.onerror=function(){ im.onload=null; im.onerror=null; LV[k]++; next(); };
+    im.src=srcAt(k,LV[k]);
+  }
+  next();
+}
+function probeAll(cb){
+  var pending=NT, done=0, k;
+  function fire(){ if(!done){ done=1; cb(); } }
+  function one(){ pending--; if(pending<=0) fire(); }
+  for(k=0;k<NT;k++){ probeOne(k,one); }
+  setTimeout(fire,4000);      /* 保险：res:// 等协议可能不触发事件，4 秒后直接开局 */
+}
+ 
+/* 入口：第一次先探测图片，之后重来不再探测 */
 function build(){
+  if(!probed){
+    probed=1;
+    probeAll(buildBoard);
+  } else {
+    buildBoard();
+  }
+}
+ 
+function buildBoard(){
   var z,c,r,i,n,s,ks=[];
   T=[]; B=[]; over=0;
   for(z=0;z<LAYERS;z++){
@@ -78,7 +122,7 @@ function build(){
   document.getElementById('board').innerHTML=s;
   refresh(); drawBar();
 }
-
+ 
 function isBlocked(i){
   var j,a=T[i],b;
   for(j=0;j<T.length;j++){
@@ -87,7 +131,7 @@ function isBlocked(i){
   }
   return false;
 }
-
+ 
 function refresh(){
   var i,left=0,el;
   for(i=0;i<T.length;i++){
@@ -99,7 +143,7 @@ function refresh(){
   document.getElementById('st').innerHTML='剩余 '+left+' 张　卡槽 '+B.length+'/'+SLOTS;
   return left;
 }
-
+ 
 function drawBar(){
   var i,s='<table cellspacing="2" cellpadding="0"><tr>';
   for(i=0;i<SLOTS;i++){
@@ -108,7 +152,7 @@ function drawBar(){
   s+='</tr></table>';
   document.getElementById('bar').innerHTML=s;
 }
-
+ 
 function pick(i){
   var k,p,j,cnt,nb,left;
   if(over || T[i].gone || B.length>=SLOTS || isBlocked(i)) return;
@@ -131,7 +175,7 @@ function pick(i){
   else if(B.length>=SLOTS){ over=1; msg='卡槽满了，失败…再来一次吧'; setTimeout("fin()",30); }
 }
 function fin(){ alert(msg); }
-
+ 
 function reshuffle(){
   var i,ix=[],ks=[];
   if(over) return;
@@ -155,3 +199,4 @@ function reshuffle(){
 <input type="button" value="重来" onclick="build()">
 </body>
 </html>
+ 
