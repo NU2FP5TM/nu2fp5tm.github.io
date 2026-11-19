@@ -1,0 +1,157 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>羊了个羊 (IE5 版)</title>
+<style type="text/css">
+body{margin:0;padding:8px;background:#c8e6b0;font-size:12px;font-family:Tahoma,Arial,sans-serif;text-align:center}
+h3{margin:4px 0}
+#board{position:relative;width:280px;height:320px;margin:0 auto;background:#9ccc78;border:2px inset #fff;text-align:left}
+.tile{position:absolute;width:36px;height:40px;background:#fff;border:2px outset #eee;text-align:center;overflow:hidden;cursor:pointer;cursor:hand}
+.blk{background:#999;border:2px outset #aaa;cursor:default}
+#barwrap{width:300px;margin:8px auto}
+.slot{width:38px;height:42px;background:#fff;border:2px inset #ccc;text-align:center;vertical-align:middle}
+</style>
+<script type="text/javascript">
+/* ===== 设定区 ===== */
+var NT=10;          // 图案种类数
+var LAYERS=5;       // 层数
+var SLOTS=7;        // 卡槽数
+var W=36, H=40;     // 牌尺寸 (要和 CSS .tile 一致)
+
+/* 图片槽：IMG[k] = 第 k 种牌的图片 (建议 28x28 gif)。
+   找不到档案时会自动退到 RES[k]，再退到 Webdings 字形 */
+var IMG=[], RES=[], i0;
+for(i0=0;i0<NT;i0++){ IMG[i0]='images/t'+i0+'.gif'; }
+/* 系统 DLL 资源（选填）：格式 res://dll名称/#资源类型/#资源ID
+   例： RES[0]='res://shell32.dll/#2/#130';  （ID 请自己用 Resource Hacker 查） */
+
+/* 最终备援：Webdings 字形 + 颜色 */
+var CH=['B','C','D','E','F','G','H','I','J','K'];
+var COL=['#d33','#36c','#393','#c60','#909','#088','#963','#c39','#555','#690'];
+/* ================== */
+
+var T=[], B=[], over=0, msg='';
+
+function rnd(n){ return Math.floor(Math.random()*n); }
+function shuffleArr(a){
+  var i,j,t;
+  for(i=a.length-1;i>0;i--){ j=rnd(i+1); t=a[i]; a[i]=a[j]; a[j]=t; }
+}
+function glyph(k){
+  return '<span style="font-family:Webdings;font-size:26px;line-height:36px;color:'+COL[k]+'">'+CH[k]+'</span>';
+}
+function icon(k){
+  if(IMG[k]) return '<img src="'+IMG[k]+'" width="28" height="28" style="margin-top:4px" onerror="imgFail(this,'+k+',1)">';
+  if(RES[k]) return '<img src="'+RES[k]+'" width="28" height="28" style="margin-top:4px" onerror="imgFail(this,'+k+',0)">';
+  return glyph(k);
+}
+function imgFail(el,k,tryRes){
+  el.onerror=null;
+  if(tryRes && RES[k]){
+    el.onerror=function(){ imgFail(el,k,0); };
+    el.src=RES[k];
+    return;
+  }
+  el.outerHTML=glyph(k);
+}
+
+function build(){
+  var z,c,r,i,n,s,ks=[];
+  T=[]; B=[]; over=0;
+  for(z=0;z<LAYERS;z++){
+    var ox=(z%2)*(W/2), oy=((z+1)%3)*(H/3);
+    for(c=0;c<7;c++){
+      for(r=0;r<7;r++){
+        if(Math.random()<0.38){ T[T.length]={x:c*W+ox,y:r*H+oy,z:z,k:0,gone:0}; }
+      }
+    }
+  }
+  n=T.length-(T.length%3);
+  T.length=n;
+  for(i=0;i<n;i++){ ks[i]=Math.floor(i/3)%NT; }
+  shuffleArr(ks);
+  s='';
+  for(i=0;i<n;i++){
+    T[i].k=ks[i];
+    s+='<div id="t'+i+'" class="tile" style="left:'+T[i].x+'px;top:'+T[i].y+'px;z-index:'+(T[i].z+1)+'" onclick="pick('+i+')">'+icon(ks[i])+'</div>';
+  }
+  document.getElementById('board').innerHTML=s;
+  refresh(); drawBar();
+}
+
+function isBlocked(i){
+  var j,a=T[i],b;
+  for(j=0;j<T.length;j++){
+    b=T[j];
+    if(!b.gone && b.z>a.z && Math.abs(b.x-a.x)<W && Math.abs(b.y-a.y)<H) return true;
+  }
+  return false;
+}
+
+function refresh(){
+  var i,left=0,el;
+  for(i=0;i<T.length;i++){
+    if(T[i].gone) continue;
+    left++;
+    el=document.getElementById('t'+i);
+    el.className=isBlocked(i)?'tile blk':'tile';
+  }
+  document.getElementById('st').innerHTML='剩余 '+left+' 张　卡槽 '+B.length+'/'+SLOTS;
+  return left;
+}
+
+function drawBar(){
+  var i,s='<table cellspacing="2" cellpadding="0"><tr>';
+  for(i=0;i<SLOTS;i++){
+    s+='<td class="slot">'+(i<B.length?icon(B[i]):'&nbsp;')+'</td>';
+  }
+  s+='</tr></table>';
+  document.getElementById('bar').innerHTML=s;
+}
+
+function pick(i){
+  var k,p,j,cnt,nb,left;
+  if(over || T[i].gone || B.length>=SLOTS || isBlocked(i)) return;
+  T[i].gone=1;
+  document.getElementById('t'+i).style.display='none';
+  k=T[i].k;
+  p=B.length;
+  for(j=B.length-1;j>=0;j--){ if(B[j]==k){ p=j+1; break; } }
+  for(j=B.length;j>p;j--){ B[j]=B[j-1]; }
+  B[p]=k;
+  cnt=0;
+  for(j=0;j<B.length;j++){ if(B[j]==k) cnt++; }
+  if(cnt>=3){
+    nb=[];
+    for(j=0;j<B.length;j++){ if(B[j]!=k) nb[nb.length]=B[j]; }
+    B=nb;
+  }
+  left=refresh(); drawBar();
+  if(left==0){ over=1; msg='过关啦！'; setTimeout("fin()",30); }
+  else if(B.length>=SLOTS){ over=1; msg='卡槽满了，失败…再来一次吧'; setTimeout("fin()",30); }
+}
+function fin(){ alert(msg); }
+
+function reshuffle(){
+  var i,ix=[],ks=[];
+  if(over) return;
+  for(i=0;i<T.length;i++){
+    if(!T[i].gone){ ix[ix.length]=i; ks[ks.length]=T[i].k; }
+  }
+  shuffleArr(ks);
+  for(i=0;i<ix.length;i++){
+    T[ix[i]].k=ks[i];
+    document.getElementById('t'+ix[i]).innerHTML=icon(ks[i]);
+  }
+}
+</script>
+</head>
+<body onload="build()">
+<h3>羊了个羊</h3>
+<div id="st">&nbsp;</div>
+<div id="board"></div>
+<div id="barwrap"><div id="bar"></div></div>
+<input type="button" value="洗牌" onclick="reshuffle()">
+<input type="button" value="重来" onclick="build()">
+</body>
+</html>
